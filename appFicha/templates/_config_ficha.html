@@ -1,0 +1,97 @@
+<!-- Modal de Configuración de Ficha -->
+<div id="modalConfiguracionFicha" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-3 sm:p-4 transition-all duration-300 ease-out">
+    <div id="contenidoModalConfiguracionFicha" class="bg-white shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden p-4 sm:p-6 transform scale-95 opacity-0 transition-all duration-300 ease-out">
+
+        <!-- Header Homogéneo -->
+        <div class="bg-slate-900 rounded-xl p-4 sm:p-5 mb-4 flex items-center justify-between text-white shrink-0 shadow-sm">
+            <div>
+                <p class="text-xs uppercase tracking-widest opacity-70 mb-0.5">Herramienta <b>Clep</b></p>
+                <h2 id="titulo-modal-configuracion" class="text-lg sm:text-xl font-bold tracking-tight">Ajustes del Libro Ficha</h2>
+            </div>
+            <button type="button" onclick="cerrarModalConfiguracionFicha()" class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-800 text-slate-300 hover:text-white transition-colors" aria-label="Cerrar modal">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+
+        <!-- Formulario (Flex container de altura completa) -->
+        <form id="formConfiguracionFicha" action="{% url 'guardar_configuracion_ficha' %}" method="POST" class="flex flex-col flex-1 min-h-0 min-w-0">
+            {% csrf_token %}
+            
+            <!-- Cuerpo escroleable (flex-1 con overflow-y-auto) -->
+            <div class="flex-1 overflow-y-auto space-y-4 px-0.5 py-1">
+                <div>
+                    <label for="campo_1" class="mb-1.5 block text-sm font-medium text-gray-700">
+                        Valor del Campo <span class="text-xs text-gray-400 font-normal"></span>
+                    </label>
+                    <textarea 
+                        name="campo_1" 
+                        id="campo_1" 
+                        rows="5"
+                        placeholder="Deje en blanco o ingrese el texto deseado..."
+                        class="w-full rounded-xl border border-gray-300 bg-white px-3.5 py-2.5 text-sm text-gray-800 outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200 resize-y"
+                    >{% if config_ficha and config_ficha.campo_1 %}{{ config_ficha.campo_1 }}{% endif %}</textarea>
+                    
+                </div>
+            </div>
+
+            <!-- Footer con Acciones (shrink-0 y margen superior auto para fijarse abajo) -->
+            <div class="flex items-center justify-end gap-2 border-t border-gray-200 bg-gray-50 px-4 sm:px-6 py-3.5 mt-4 -mx-4 sm:-mx-6 -mb-4 sm:-mb-6 shrink-0">
+                <button type="button" onclick="cerrarModalConfiguracionFicha()" class="inline-flex items-center justify-center h-9 px-3 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-200/60 hover:text-slate-900 transition shrink-0">
+                    Cancelar
+                </button>
+                <button type="submit" id="botonGuardarConfiguracionFicha" class="inline-flex items-center justify-center gap-1.5 h-9 px-3.5 sm:px-4 rounded-full bg-slate-900 hover:bg-black text-xs font-semibold text-white transition shadow-sm active:scale-95 shrink-0 disabled:opacity-40 disabled:cursor-not-allowed">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                    <span>Guardar Configuración</span>
+                </button>
+            </div>
+        </form>
+
+    </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const modal = document.getElementById("modalConfiguracionFicha");
+    const tarjetaModal = document.getElementById("contenidoModalConfiguracionFicha");
+    const textareaCampo1 = document.getElementById("campo_1");
+
+    window.abrirModalConfiguracionFicha = function () {
+        modal.classList.remove("hidden");
+        document.body.classList.add("overflow-hidden");
+
+        setTimeout(() => {
+            tarjetaModal.classList.remove("scale-95", "opacity-0");
+            tarjetaModal.classList.add("scale-100", "opacity-100");
+            
+            if (textareaCampo1) {
+                textareaCampo1.focus();
+                textareaCampo1.setSelectionRange(textareaCampo1.value.length, textareaCampo1.value.length);
+            }
+        }, 10);
+    };
+
+    window.cerrarModalConfiguracionFicha = function () {
+        tarjetaModal.classList.remove("scale-100", "opacity-100");
+        tarjetaModal.classList.add("scale-95", "opacity-0");
+
+        setTimeout(() => {
+            modal.classList.add("hidden");
+            document.body.classList.remove("overflow-hidden");
+        }, 200);
+    };
+
+    modal.addEventListener("mousedown", (evento) => {
+        if (evento.target === modal) cerrarModalConfiguracionFicha();
+    });
+
+    document.addEventListener("keydown", (evento) => {
+        if (evento.key === "Escape" && !modal.classList.contains("hidden")) {
+            cerrarModalConfiguracionFicha();
+        }
+    });
+});
+</script>

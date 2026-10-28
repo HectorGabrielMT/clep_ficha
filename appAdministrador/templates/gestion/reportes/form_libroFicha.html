@@ -1,0 +1,272 @@
+<style>
+    .swal2-html-container { margin: 0 !important; overflow: hidden !important; }
+    .swal2-loader { display: none !important; }
+
+    .custom-swal-loader {
+        position: absolute;
+        inset: 0;
+        z-index: 10;
+        display: none; 
+        align-items: center;
+        justify-content: center;
+        background-color: rgba(255, 255, 255, 0.9);
+    }
+
+    /* Grid principal ultra compacto */
+    .reporte-grid-container {
+        display: grid;
+        grid-template-columns: 140px 50px 1fr; /* Meses | Atajos | Opciones */
+        gap: 0.5rem;
+        align-items: start;
+    }
+
+    .meses-col {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    /* Botones de selección rápida estilo "pestaña" de la imagen */
+    .btn-periodo {
+        display: block;
+        width: 100%;
+        padding: 2px 0;
+        font-size: 10px;
+        font-weight: bold;
+        text-align: center;
+        border: 1px solid #e2e8f0;
+        background: #fff;
+        color: #64748b;
+        cursor: pointer;
+        border-radius: 2px;
+        margin-bottom: 2px;
+        transition: all 0.2s;
+    }
+    .btn-periodo:hover { background: #f1f5f9; border-color: #cbd5e1; }
+    .btn-periodo.active-t { color: #ef4444; border-left: 3px solid #ef4444; } /* Trimestres */
+    .btn-periodo.active-c { color: #10b981; border-left: 3px solid #10b981; } /* Cuatrimestres */
+    .btn-periodo.active-s { color: #3b82f6; border-left: 3px solid #3b82f6; } /* Semestres */
+
+    @keyframes dot-pulse {
+        0%, 100% { transform: scale(1); opacity: 1; }
+        50% { transform: scale(1.5); opacity: 0.5; }
+    }
+    .animate-dot { animation: dot-pulse 1.5s infinite ease-in-out; }
+</style>
+
+<script>
+// Función auxiliar para marcar meses (se mantiene igual)
+function selMeses(rango) {
+    const inputs = document.querySelectorAll('input[name="swal-meses"]');
+    inputs.forEach(i => i.checked = false);
+    
+    if(rango === 'all') {
+        inputs.forEach(i => i.checked = true);
+    } else if(rango === 'none') {
+        inputs.forEach(i => i.checked = false);
+    } else {
+        rango.forEach(m => {
+            const el = document.querySelector(`input[name="swal-meses"][value="${m}"]`);
+            if(el) el.checked = true;
+        });
+    }
+}
+
+function abrirFormulario_libroFicha() {
+    const filtroAnioExterno = document.getElementById('filtro-anio')?.value;
+    const mesesNom = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+
+    Swal.fire({
+        showConfirmButton: true,
+        showCancelButton: true,
+        allowOutsideClick: false, // Importante para evitar cierre accidental
+        backdrop: true,
+        confirmButtonText: 'Exportar Reporte',
+        cancelButtonText: 'Cancelar',
+        buttonsStyling: false,
+        reverseButtons: true,
+        width: '580px',
+        // Aseguramos que permita el click fuera SOLO si no está cargando (lógica en allowOutsideClick abajo)
+        allowOutsideClick: () => !Swal.isLoading(),
+        customClass: {
+            popup: 'rounded-none border border-gray-200 shadow-2xl relative overflow-hidden',
+            actions: 'flex justify-end gap-3 w-full px-6 py-3 bg-gray-50 border-t',
+            confirmButton: 'bg-slate-800 text-white rounded-full px-5 py-1.5 text-xs font-semibold hover:bg-slate-900 transition-colors order-2',
+            cancelButton: 'border border-gray-300 rounded-full px-5 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100 transition-colors order-1'
+        },
+        html: `
+            <div class="bg-slate-800 text-white px-5 py-3 text-left">
+                <p class="text-[10px] uppercase tracking-widest opacity-70">Sistema <b>Clep</b></p>
+                <h2 class="text-lg font-bold tracking-tight">Libro de Fichas - CCPP{{ ccpp.id_ccpp|stringformat:'03d' }}</h2>
+            </div>
+            
+            <div id="swal-form-content" class="p-5 text-left bg-white">
+                <div class="mb-4">
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Año de consulta</label>
+                    <select id="swal-anio" class="w-full border border-gray-300 rounded-md px-2 py-1.5 text-xs bg-gray-50 focus:ring-1 focus:ring-slate-800">
+                        {% for a in lista_anios %}
+                            <option value="{{ a.indice }}" ${filtroAnioExterno == "{{ a.indice }}" ? 'selected' : ''}>
+                                {{ a.label }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="reporte-grid-container">
+                    <div class="meses-col border-r border-gray-100 pr-2">
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase mb-2">Meses</label>
+                        ${mesesNom.map((mes, index) => `
+                            <label class="flex items-center space-x-2 cursor-pointer hover:bg-gray-50 py-0.5 px-1 rounded">
+                                <input type="checkbox" name="swal-meses" value="${index + 1}" class="w-3.5 h-3.5 accent-slate-800 border-gray-300 rounded-none">
+                                <span class="text-[12px] text-gray-600">${mes}</span>
+                            </label>
+                        `).join('')}
+                    </div>
+
+                    <div class="flex flex-col pt-6">
+                        <button type="button" onclick="selMeses([1,2,3])" class="btn-periodo active-t">1T</button>
+                        <button type="button" onclick="selMeses([4,5,6])" class="btn-periodo active-t">2T</button>
+                        <button type="button" onclick="selMeses([7,8,9])" class="btn-periodo active-t">3T</button>
+                        <button type="button" onclick="selMeses([10,11,12])" class="btn-periodo active-t">4T</button>
+                        <div class="my-1 border-t border-gray-100"></div>
+                        <button type="button" onclick="selMeses([1,2,3,4])" class="btn-periodo active-c">1C</button>
+                        <button type="button" onclick="selMeses([5,6,7,8])" class="btn-periodo active-c">2C</button>
+                        <button type="button" onclick="selMeses([9,10,11,12])" class="btn-periodo active-c">3C</button>
+                        <div class="my-1 border-t border-gray-100"></div>
+                        <button type="button" onclick="selMeses([1,2,3,4,5,6])" class="btn-periodo active-s">1S</button>
+                        <button type="button" onclick="selMeses([7,8,9,10,11,12])" class="btn-periodo active-s">2S</button>
+                        <div class="my-1 border-t border-gray-100"></div>
+                        <button type="button" onclick="selMeses('none')" class="btn-periodo">0</button>
+                        <button type="button" onclick="selMeses('all')" class="btn-periodo">12</button>
+                    </div>
+
+                    <div class="pl-2 space-y-3">
+                        <div>
+                            <label class="block text-[10px] font-bold text-gray-400 uppercase mb-2">Estructura PDF</label>
+                            <div class="space-y-1.5">
+                                ${['Portada', 'Indice de unidades', 'Anexo fotográfico', 'Firmas por ficha'].map(item => `
+                                    <label class="flex items-center group cursor-pointer">
+                                        <input type="checkbox" id="swal-${item.replace(/\s+/g, '-').toLowerCase()}" checked class="w-3.5 h-3.5 accent-slate-800 border-gray-300 rounded-none">
+                                        <span class="ml-2 text-[12px] text-gray-600 group-hover:text-slate-900">${item}</span>
+                                    </label>
+                                `).join('')}
+                                <label class="flex items-center group cursor-pointer pt-1">
+                                    <input type="checkbox" id="swal-firmas-pie" checked class="w-3.5 h-3.5 accent-slate-800 border-gray-300 rounded-none">
+                                    <span class="ml-2 text-[12px] text-gray-700 font-semibold group-hover:text-slate-900">Firmas pie informe</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="pt-2 border-t border-gray-100">
+                            <span class="block text-[10px] font-bold text-slate-400 uppercase mb-2">Notificaciones</span>
+                            <div class="flex flex-col gap-1.5">
+                                <label class="flex items-center group cursor-pointer">
+                                    <input type="checkbox" id="swal-remitentes" class="w-3.5 h-3.5 accent-slate-800 border-gray-300 rounded-none">
+                                    <span class="ml-2 text-[12px] text-gray-600 group-hover:text-slate-900">Remitente/s</span>
+                                </label>
+                                <label class="flex items-center group cursor-pointer">
+                                    <input type="checkbox" id="swal-respuesta" class="w-3.5 h-3.5 accent-slate-800 border-gray-300 rounded-none">
+                                    <span class="ml-2 text-[12px] text-gray-600 group-hover:text-slate-900">Respuesta</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="custom-loader" class="custom-swal-loader">
+                <div class="flex items-center gap-3">
+                    <div class="w-3 h-3 rounded-full bg-slate-800 animate-dot"></div>
+                    <span class="text-xs text-gray-500 tracking-wide select-none">Generando Libro de Fichas...</span>
+                </div>
+            </div>
+        `,
+        preConfirm: () => {
+            // Validar que se haya seleccionado al menos un mes
+            const mesesSeleccionados = Array.from(
+                document.querySelectorAll('input[name="swal-meses"]:checked')
+            ).map(input => input.value);
+
+            if (mesesSeleccionados.length === 0) {
+                Swal.showValidationMessage('Debe seleccionar al menos un mes');
+                return false;
+            }
+
+            // === 1. INICIO DE UI DE CARGA (Estilo master) ===
+            const loader = document.getElementById('custom-loader');
+            const actions = Swal.getActions(); // Obtener la barra de botones
+            
+            // Ocultamos los botones completamente
+            if (actions) actions.style.setProperty('display', 'none', 'important');
+            // Mostramos el loader overlay
+            loader.style.display = 'flex';
+
+
+            // Recopilar datos
+            const anio = document.getElementById('swal-anio').value;
+            const ccppId = '{{ ccpp.id_ccpp }}';
+
+            const params = new URLSearchParams();
+            params.append('ccpp', ccppId);
+            params.append('anio', anio);
+            mesesSeleccionados.forEach(mes => params.append('meses[]', mes));
+
+            // Agregar opciones booleanas
+            params.append('portada', document.getElementById('swal-portada')?.checked ? 'true' : 'false');
+            params.append('indice', document.getElementById('swal-indice-de-unidades')?.checked ? 'true' : 'false');
+            params.append('anexo', document.getElementById('swal-anexo-fotográfico')?.checked ? 'true' : 'false');
+            params.append('firmas_ficha', document.getElementById('swal-firmas-por-ficha')?.checked ? 'true' : 'false');
+            params.append('firmas_pie', document.getElementById('swal-firmas-pie')?.checked ? 'true' : 'false');
+            params.append('notif_remitente', document.getElementById('swal-remitentes')?.checked ? 'true' : 'false');
+            params.append('notif_respuesta', document.getElementById('swal-respuesta')?.checked ? 'true' : 'false');
+
+            // Hacer la petición
+            return fetch(`/reporte/libro-fichas/?${params.toString()}`, {
+                method: 'GET',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error("Error generando reporte");
+                }
+                return response.blob();
+            })
+            .then(blob => {
+                // Descarga del archivo
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `Libro_Fichas_${anio}.pdf`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                window.URL.revokeObjectURL(url);
+
+                // === 2. UI DE ÉXITO (Estilo master) ===
+                // Reemplazamos el contenido del loader con el mensaje de éxito
+                loader.innerHTML = `
+                    <div class="flex flex-col items-center gap-2 animate-in fade-in zoom-in duration-300">
+                        <span class="text-emerald-600 font-bold text-xl tracking-tight">¡Listo!</span>
+                        <span class="text-xs text-gray-400 text-center px-6">El Libro de Fichas se ha generado correctamente</span>
+                    </div>
+                `;
+
+                // === 3. CIERRE RETARDADO ===
+                setTimeout(() => {
+                    Swal.close();
+                }, 2000);
+
+                return false; // Evitamos cierre inmediato
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                
+                // === 4. MANEJO DE ERROR (Restaurar UI) ===
+                if (actions) actions.style.display = 'flex'; // Mostrar botones de nuevo
+                loader.style.display = 'none'; // Ocultar loader
+                Swal.showValidationMessage(`Error: ${error.message}`);
+            });
+        }
+    });
+}
+</script>

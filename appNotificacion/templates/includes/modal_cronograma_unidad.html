@@ -1,0 +1,576 @@
+<!-- Modal: cronograma completo de la unidad dentro de esta CCPP -->
+<div id="modal-cronograma-unidad"
+     class="hidden fixed inset-0 z-[9990] flex items-center justify-center bg-slate-900/60 p-4 transition-all duration-300 ease-out">
+
+    <div id="modal-cronograma-card"
+         class="bg-white rounded-none shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col overflow-hidden p-6 transform scale-95 opacity-0 transition-all duration-300 ease-out">
+
+        <div class="bg-slate-900 rounded-xl p-5 mb-4 flex items-center justify-between text-white shrink-0 shadow-sm">
+            <div>
+                <p class="text-[10px] font-bold tracking-wider text-slate-400 uppercase">HERRAMIENTA CLEP</p>
+                <h2 class="text-xl font-extrabold tracking-tight text-white mt-0.5">
+                    Cronograma - {{ unidad.unidad }} · CCPP{{ ccpp.id_ccpp|stringformat:'03d' }}
+                </h2>
+            </div>
+            <button type="button" onclick="mcuCerrarModal()"
+                    class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-800 text-slate-300 hover:text-white transition-colors duration-200">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+
+        <div class="flex-1 overflow-auto border border-gray-200">
+            <table class="w-full text-center align-middle text-[11px] border-collapse border-spacing-0">
+                <thead>
+                    <tr>
+                        <th class="sticky top-0 left-0 z-50 border-r border-b border-gray-300 bg-gray-200 text-left px-2 py-1 text-[10px]">
+                            Año
+                        </th>
+                        {% for mes in meses_modal %}
+                            <th class="sticky top-0 z-40 w-16 border-r border-b border-gray-300 bg-gray-100 py-1 text-[10px]">
+                                {{ mes|capfirst }}
+                            </th>
+                        {% endfor %}
+                        <th class="sticky top-0 z-40 w-28 border-b border-gray-300 bg-gray-200 py-1 text-[10px]">
+                            Nota
+                        </th>
+                    </tr>
+                </thead>
+                <tbody id="mcu-tbody">
+                    {% for fila in filas_cronograma_modal %}
+                        <tr>
+                            <td class="sticky left-0 z-30 border-r border-b border-gray-200 bg-gray-50 text-left px-2 py-1 font-semibold whitespace-nowrap">
+                                Año {{ fila.anio_relativo }}{% if fila.anio_calendario %} ({{ fila.anio_calendario }}){% endif %}
+                            </td>
+                            {% for mes_info in fila.meses %}
+                                <td class="mcu-td border-r border-b border-gray-200 relative p-0 cursor-pointer transition-colors
+                                           {% if mes_info.is_past %}bg-yellow-50{% else %}bg-white{% endif %}"
+                                    data-unidad="{{ unidad.id_unidad }}"
+                                    data-anio="{{ fila.anio_relativo }}"
+                                    data-campo="{{ mes_info.mes }}"
+                                    data-valor="{{ mes_info.valor|default:'' }}"
+                                    onclick="mcuSeleccionarCelda(this)">
+                                    <div class="mcu-visual w-full h-full min-h-[34px] flex items-center justify-center relative pointer-events-none">
+                                        {% for insp in inspecciones_catalogo_lista %}
+                                            {% if mes_info.valor == insp.id|stringformat:"s" %}
+                                                <span class="w-[85%] text-center px-1 py-1 rounded-sm text-white font-medium shadow-sm"
+                                                      style="background-color: {{ insp.color_inspeccion }}; font-size: 0.85rem; line-height: 1;">
+                                                    {{ insp.codigo_inspeccion }}
+                                                </span>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                </td>
+                            {% endfor %}
+
+                            <!-- NOTA -->
+                            <td class="mcu-td border-b border-gray-200 relative p-0 bg-white cursor-pointer transition-colors"
+                                data-tipo="nota"
+                                data-unidad="{{ unidad.id_unidad }}"
+                                data-anio="{{ fila.anio_relativo }}"
+                                data-campo="nota"
+                                data-valor="{{ fila.nota|default:'' }}"
+                                onclick="mcuSeleccionarCelda(this)">
+                                <div class="mcu-visual w-full h-full min-h-[34px] flex items-center justify-center px-1 py-0.5 text-[11px] pointer-events-none">
+                                    {{ fila.nota|default:'' }}
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+    .mcu-td { position: relative !important; }
+
+    .mcu-td.mcu-selected::after {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        border: 2px solid #107c41;
+        pointer-events: none;
+        z-index: 20;
+    }
+
+    .mcu-input {
+        background: transparent;
+        border: none;
+        text-align: center;
+        width: 85%;
+        font-weight: 600;
+        text-transform: uppercase;
+        outline: none;
+        z-index: 5;
+        position: relative;
+        font-size: 0.85rem;
+    }
+
+    .mcu-input-nota {
+        background: white;
+        border: none;
+        text-align: center;
+        outline: none;
+        z-index: 5;
+    }
+
+    .mcu-btn-dropdown {
+        position: absolute;
+        right: 0; top: 0; bottom: 0;
+        width: 16px;
+        background: #f1f5f9;
+        border-left: 1px solid #cbd5e1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10;
+    }
+    .mcu-btn-dropdown:hover { background: #e2e8f0; }
+
+    .mcu-dropdown {
+        position: fixed;
+        z-index: 99999;
+        min-width: 220px;
+        max-width: 260px;
+        max-height: 260px;
+        overflow-y: auto;
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 6px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+        font-size: 0.72rem;
+    }
+
+    .mcu-dropdown-item {
+        padding: 6px 10px;
+        cursor: pointer;
+        white-space: nowrap;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .mcu-dropdown-item:hover { background-color: #f9fafb; }
+
+    .mcu-td.mcu-saving { position: relative; pointer-events: none; opacity: 0.6; }
+    .mcu-td.mcu-saving::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background-color: rgba(255,255,255,0.6);
+        z-index: 2;
+    }
+    .mcu-td.mcu-saving .mcu-spinner {
+        position: absolute;
+        width: 16px; height: 16px;
+        border: 2px solid #e5e7eb;
+        border-top-color: #3b82f6;
+        border-radius: 50%;
+        animation: mcu-spin 0.8s linear infinite;
+        top: 50%; left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 3;
+    }
+    @keyframes mcu-spin { to { transform: translate(-50%, -50%) rotate(360deg); } }
+</style>
+
+<script>
+    const MCU_INSPECCIONES = [
+        {% for insp in inspecciones_catalogo_lista %}
+        { id: "{{ insp.id }}", codigo: "{{ insp.codigo_inspeccion }}", nombre: "{{ insp.nombre_inspeccion }}", color: "{{ insp.color_inspeccion }}" },
+        {% endfor %}
+    ];
+
+    let mcuCsrfToken = null;
+    let mcuCeldaSeleccionada = null;
+    let mcuDropdownActivo = null;
+    let mcuCeldaActivaDropdown = null;
+
+    function mcuObtenerCsrf() {
+        if (mcuCsrfToken) return mcuCsrfToken;
+        const cookie = document.cookie.split('; ').find(row => row.startsWith('csrftoken='));
+        mcuCsrfToken = cookie ? cookie.split('=')[1] : (typeof obtenerTokenCSRF === 'function' ? obtenerTokenCSRF() : '');
+        return mcuCsrfToken;
+    }
+
+    function mcuAbrirModal() {
+        const backdrop = document.getElementById('modal-cronograma-unidad');
+        const card = document.getElementById('modal-cronograma-card');
+
+        backdrop.classList.remove('hidden');
+
+        requestAnimationFrame(() => {
+            backdrop.classList.remove('bg-slate-900/0');
+            backdrop.classList.add('bg-slate-900/60');
+            card.classList.remove('scale-95', 'opacity-0');
+            card.classList.add('scale-100', 'opacity-100');
+        });
+    }
+
+    function mcuCerrarModal() {
+        mcuCerrarDropdown();
+        if (mcuCeldaSeleccionada) {
+            mcuDesactivarCelda(mcuCeldaSeleccionada);
+            mcuCeldaSeleccionada = null;
+        }
+
+        const backdrop = document.getElementById('modal-cronograma-unidad');
+        const card = document.getElementById('modal-cronograma-card');
+
+        backdrop.classList.remove('bg-slate-900/60');
+        backdrop.classList.add('bg-slate-900/0');
+        card.classList.remove('scale-100', 'opacity-100');
+        card.classList.add('scale-95', 'opacity-0');
+
+        setTimeout(() => {
+            backdrop.classList.add('hidden');
+            window.location.reload(); // <-- RECARGA LA PÁGINA TRAS CERRAR EL MODAL
+        }, 300);
+    }
+
+    function mcuSeleccionarCelda(td) {
+        if (!td || !td.classList.contains('mcu-td')) return;
+        if (mcuCeldaSeleccionada === td) return;
+
+        if (mcuCeldaSeleccionada) {
+            mcuDesactivarCelda(mcuCeldaSeleccionada);
+        }
+
+        mcuCeldaSeleccionada = td;
+        td.classList.add('mcu-selected');
+        mcuActivarCelda(td);
+    }
+
+    function mcuActivarCelda(td) {
+        const visual = td.querySelector('.mcu-visual');
+        if (visual) visual.style.display = 'none';
+
+        const esNota = td.dataset.tipo === 'nota';
+        const valorActual = td.dataset.valor || '';
+        const input = document.createElement('input');
+        input.type = 'text';
+
+        // ===== RAMA NOTA =====
+        if (esNota) {
+            input.className = 'mcu-input-nota w-full h-full px-1 py-0.5 text-[11px] focus:outline-none text-center absolute inset-0';
+            input.value = valorActual;
+            input.dataset.valorPrevio = valorActual;
+
+            const guardarNota = () => {
+                const nuevoValor = input.value.trim();
+                const valorAnterior = td.dataset.valor || '';
+                if (nuevoValor === valorAnterior) return;
+                td.dataset.valor = nuevoValor;
+                mcuGuardarCelda(td, nuevoValor);
+            };
+
+            input.addEventListener('blur', guardarNota);
+            input.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    guardarNota();
+                    input.blur();
+                }
+            });
+
+            td.appendChild(input);
+            input.focus();
+            return;
+        }
+
+        // ===== RAMA INSPECCIÓN (comportamiento original) =====
+        let codigo = '', color = 'transparent', fontColor = 'inherit';
+
+        if (valorActual) {
+            const insp = MCU_INSPECCIONES.find(i => i.id === valorActual);
+            if (insp) { codigo = insp.codigo; color = insp.color; fontColor = 'white'; }
+        }
+
+        input.className = 'mcu-input absolute';
+        input.style.backgroundColor = color;
+        input.style.color = fontColor;
+        input.value = codigo;
+        input.dataset.valorPrevio = valorActual;
+
+        input.addEventListener('blur', function () {
+            setTimeout(() => {
+                if (document.activeElement !== input && !mcuDropdownActivo) {
+                    mcuValidarInput(this);
+                }
+            }, 150);
+        });
+        input.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') this.blur();
+        });
+
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'mcu-btn-dropdown';
+        btn.innerHTML = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>`;
+        btn.addEventListener('mousedown', e => e.preventDefault());
+        btn.addEventListener('click', e => { e.stopPropagation(); mcuAbrirDropdown(td); });
+
+        td.appendChild(input);
+        td.appendChild(btn);
+
+        input.focus();
+        input.select();
+    }
+
+    function mcuDesactivarCelda(td) {
+        td.classList.remove('mcu-selected');
+
+        const esNota = td.dataset.tipo === 'nota';
+
+        // ===== RAMA NOTA =====
+        if (esNota) {
+            const input = td.querySelector('.mcu-input-nota');
+
+            if (input) {
+                const nuevoValor = input.value.trim();
+                const valorAnterior = td.dataset.valor || '';
+
+                if (nuevoValor !== valorAnterior) {
+                    td.dataset.valor = nuevoValor;
+                    mcuGuardarCelda(td, nuevoValor);
+                }
+                input.remove();
+            }
+
+            let visual = td.querySelector('.mcu-visual');
+            if (!visual) {
+                visual = document.createElement('div');
+                visual.className = 'mcu-visual w-full h-full min-h-[34px] flex items-center justify-center px-1 py-0.5 text-[11px] pointer-events-none';
+                td.insertBefore(visual, td.firstChild);
+            }
+
+            visual.style.display = 'flex';
+            visual.textContent = td.dataset.valor || '';
+            return;
+        }
+
+        // ===== RAMA INSPECCIÓN (comportamiento original) =====
+        const input = td.querySelector('.mcu-input');
+        const btn = td.querySelector('.mcu-btn-dropdown');
+
+        if (input) {
+            mcuValidarInput(input);
+            input.remove();
+        }
+        if (btn) btn.remove();
+
+        let visual = td.querySelector('.mcu-visual');
+        if (!visual) {
+            visual = document.createElement('div');
+            visual.className = 'mcu-visual w-full h-full min-h-[34px] flex items-center justify-center relative pointer-events-none';
+            td.insertBefore(visual, td.firstChild);
+        }
+
+        visual.innerHTML = '';
+        visual.style.display = 'flex';
+
+        const valorActual = td.dataset.valor;
+        if (valorActual) {
+            const insp = MCU_INSPECCIONES.find(i => i.id === valorActual);
+            if (insp) {
+                visual.innerHTML = `
+                    <span class="w-[85%] text-center px-1 py-1 rounded-sm text-white font-medium shadow-sm"
+                          style="background-color: ${insp.color}; font-size: 0.85rem; line-height: 1;">
+                        ${insp.codigo}
+                    </span>`;
+            }
+        }
+    }
+
+    function mcuValidarInput(input) {
+        const td = input.closest('.mcu-td');
+        if (!td) return;
+
+        const valorTipeado = input.value.trim().toUpperCase();
+        const valorPrevio = input.dataset.valorPrevio || '';
+
+        if (valorTipeado === '') {
+            if (valorPrevio !== '') {
+                td.dataset.valor = '';
+                mcuGuardarCelda(td, '');
+            }
+            return;
+        }
+
+        const inspeccionEncontrada = MCU_INSPECCIONES.find(i => i.codigo.toUpperCase() === valorTipeado);
+
+        if (inspeccionEncontrada) {
+            input.value = inspeccionEncontrada.codigo;
+            input.style.backgroundColor = inspeccionEncontrada.color;
+            input.style.color = 'white';
+
+            if (valorPrevio !== inspeccionEncontrada.id) {
+                td.dataset.valor = inspeccionEncontrada.id;
+                mcuGuardarCelda(td, inspeccionEncontrada.id);
+            }
+        } else {
+            const insp = MCU_INSPECCIONES.find(i => i.id === valorPrevio);
+            input.value = insp ? insp.codigo : '';
+            input.style.backgroundColor = insp ? insp.color : 'transparent';
+            input.style.color = insp ? 'white' : 'inherit';
+        }
+    }
+
+    function mcuAbrirDropdown(td) {
+        mcuCerrarDropdown();
+        mcuCeldaActivaDropdown = td;
+
+        const rect = td.getBoundingClientRect();
+        const dropdown = document.createElement('div');
+        dropdown.className = 'mcu-dropdown';
+
+        let html = `<div class="mcu-dropdown-item" data-value=""><small>Sin inspección</small></div>`;
+        MCU_INSPECCIONES.forEach(i => {
+            html += `<div class="mcu-dropdown-item" data-value="${i.id}" data-codigo="${i.codigo}" data-color="${i.color}">
+                        <strong style="color:${i.color};">${i.codigo}</strong><small>${i.nombre}</small>
+                    </div>`;
+        });
+        dropdown.innerHTML = html;
+        document.body.appendChild(dropdown);
+
+        const alturaDropdown = dropdown.offsetHeight;
+        const espacioAbajo = window.innerHeight - rect.bottom;
+        const espacioArriba = rect.top;
+
+        let top;
+        if (espacioAbajo >= alturaDropdown + 8) {
+            top = rect.bottom + 4;
+        } else if (espacioArriba >= alturaDropdown + 8) {
+            top = rect.top - alturaDropdown - 4;
+        } else {
+            top = window.innerHeight - alturaDropdown - 8;
+        }
+
+        dropdown.style.top = `${top}px`;
+        dropdown.style.left = `${rect.left}px`;
+
+        dropdown.querySelectorAll('.mcu-dropdown-item').forEach(item => {
+            item.addEventListener('click', e => {
+                e.stopPropagation();
+                mcuSeleccionarInspeccion(item);
+            });
+        });
+
+        mcuDropdownActivo = dropdown;
+    }
+
+    function mcuCerrarDropdown() {
+        if (mcuDropdownActivo) {
+            mcuDropdownActivo.remove();
+            mcuDropdownActivo = null;
+            mcuCeldaActivaDropdown = null;
+        }
+    }
+
+    function mcuSeleccionarInspeccion(item) {
+        if (!mcuCeldaActivaDropdown) return;
+
+        const valor = item.dataset.value || '';
+        const codigo = item.dataset.codigo || '';
+        const color = item.dataset.color || '';
+
+        mcuCeldaActivaDropdown.dataset.valor = valor;
+
+        const input = mcuCeldaActivaDropdown.querySelector('.mcu-input');
+        if (input) {
+            input.value = valor ? codigo : '';
+            input.style.backgroundColor = valor ? color : 'transparent';
+            input.style.color = valor ? 'white' : 'inherit';
+            input.dataset.valorPrevio = valor;
+        }
+
+        mcuGuardarCelda(mcuCeldaActivaDropdown, valor);
+        mcuCerrarDropdown();
+    }
+
+    function mcuGuardarCelda(td, valor) {
+        const datos = new FormData();
+        datos.append('id_unidad', td.dataset.unidad);
+        datos.append('anio', td.dataset.anio);
+        datos.append('campo', td.dataset.campo);
+        datos.append('valor', valor || '');
+
+        td.classList.add('mcu-saving');
+        const spinner = document.createElement('div');
+        spinner.className = 'mcu-spinner';
+        td.appendChild(spinner);
+
+        fetch("{% url 'guardar_celda_cronograma' ccpp.id_ccpp %}", {
+            method: 'POST',
+            body: datos,
+            headers: { 'X-CSRFToken': mcuObtenerCsrf() },
+        })
+        .then(respuesta => respuesta.json())
+        .then(resultado => {
+            if (!resultado.ok) throw new Error(resultado.error || 'Error al guardar');
+        })
+        .catch(error => {
+            console.error(error);
+            if (typeof mostrarToast === 'function') {
+                mostrarToast('No se pudo guardar la celda del cronograma', 'error');
+            }
+        })
+        .finally(() => {
+            td.classList.remove('mcu-saving');
+            spinner.remove();
+        });
+    }
+
+    document.addEventListener('keydown', function (e) {
+        if (mcuDropdownActivo || !mcuCeldaSeleccionada) return;
+
+        const teclas = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Enter', 'Tab'];
+        if (!teclas.includes(e.key)) return;
+
+        const fila = mcuCeldaSeleccionada.closest('tr');
+        if (!fila) return;
+
+        const indiceCelda = Array.from(fila.children).indexOf(mcuCeldaSeleccionada);
+        const tbody = fila.parentElement;
+        const indiceFila = Array.from(tbody.children).indexOf(fila);
+        let siguienteTd = null;
+
+        if (e.key === 'ArrowRight' || (e.key === 'Tab' && !e.shiftKey)) {
+            let i = indiceCelda + 1;
+            while (i < fila.children.length) {
+                if (fila.children[i].classList.contains('mcu-td')) { siguienteTd = fila.children[i]; break; }
+                i++;
+            }
+        } else if (e.key === 'ArrowLeft' || (e.key === 'Tab' && e.shiftKey)) {
+            let i = indiceCelda - 1;
+            while (i >= 0) {
+                if (fila.children[i].classList.contains('mcu-td')) { siguienteTd = fila.children[i]; break; }
+                i--;
+            }
+        } else if (e.key === 'ArrowDown' || e.key === 'Enter') {
+            const filaSiguiente = tbody.children[indiceFila + 1];
+            if (filaSiguiente) siguienteTd = filaSiguiente.children[indiceCelda];
+        } else if (e.key === 'ArrowUp') {
+            const filaAnterior = tbody.children[indiceFila - 1];
+            if (filaAnterior) siguienteTd = filaAnterior.children[indiceCelda];
+        }
+
+        if (siguienteTd && siguienteTd.classList.contains('mcu-td')) {
+            e.preventDefault();
+            e.stopPropagation();
+            mcuSeleccionarCelda(siguienteTd);
+        }
+    });
+
+    document.addEventListener('click', function (e) {
+        if (mcuDropdownActivo && !mcuDropdownActivo.contains(e.target) && !e.target.closest('.mcu-td')) {
+            mcuCerrarDropdown();
+        }
+        if (mcuCeldaSeleccionada && !e.target.closest('.mcu-td') && !e.target.closest('#modal-cronograma-card')) {
+            mcuDesactivarCelda(mcuCeldaSeleccionada);
+            mcuCeldaSeleccionada = null;
+        }
+    });
+</script>

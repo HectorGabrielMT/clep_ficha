@@ -1,0 +1,214 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Clep{% endblock %}</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="{% static 'css/estiloGlobal.css' %}">
+    <link rel="icon" type="image/png" href="{% static 'img/icono.png' %}">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <style>
+        :root {
+            --sidebar-width: 240px;
+            --header-height: 70px;
+            --accent-color: #4f46e5;
+            --bg-main: #fcfcfd;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .scrollbar-thin {
+            scrollbar-width: thin;
+            scrollbar-color: #cbd5e1 #f1f5f9;
+        }
+
+        .scrollbar-thin::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        .scrollbar-thin::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 3px;
+        }
+
+        .scrollbar-thin::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+
+        .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50">
+{% include 'base/mensajes.html' %}
+
+    <!-- OVERLAY DE CARGA – ENTERPRISE -->
+    <div id="page-loader"
+        class="fixed inset-0 z-[9999] flex items-center justify-center bg-white">
+
+        <div class="flex items-center gap-3">
+
+            <!-- Indicador discreto -->
+            <div class="w-3 h-3 rounded-full bg-gray-400 animate-dot"></div>
+
+            <!-- Texto institucional -->
+            <span class="text-xs text-gray-500 tracking-wide select-none">
+                Cargando cronograma
+            </span>
+
+        </div>
+    </div>
+
+
+
+
+
+
+    <div class="flex h-screen">
+        <!-- Sidebar -->
+        <aside id="sidebar-principal" class="fixed top-0 left-0 w-60 h-screen z-50 bg-white/85 backdrop-blur-sm border-r border-gray-200 flex flex-col overflow-y-auto scrollbar-thin">
+            <div class="p-4 border-b border-indigo-50 relative">
+                <div class="absolute left-4 top-6">
+                    {% if user.is_superuser %}
+                        <a href="{% url 'panel_principal' %}" class="text-slate-400 hover:text-indigo-600 transition-colors flex items-center" title="Volver al panel">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                            </svg>
+                        </a>
+                    {% else %}
+                        <form action="{% url 'cerrar_sesion' %}" method="POST" class="inline">
+                            {% csrf_token %}
+                            <button type="submit" class="text-slate-400 hover:text-red-600 transition-colors flex items-center" title="Cerrar sesión">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                                </svg>
+                            </button>
+                        </form>
+                    {% endif %}
+                </div>
+                <div class="absolute right-4 top-5 lg:hidden">
+                    <button onclick="alternarMenu()" class="p-2 text-slate-400 hover:text-red-500">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="flex flex-col items-center mb-6">
+                    {% if user.is_superuser%}
+                    <a href="{% url 'panel_principal' %}" class="group transition-transform duration-300">
+                    {% else %}
+                    <a href="" class="group transition-transform duration-300">
+                    {% endif %}
+                        <div class="flex items-center gap-3">
+                            <div class="flex-shrink-0">
+                                <img src="{% static 'img/logo.png' %}" 
+                                    alt="Logo clep" 
+                                    class="w-32 h-16 object-contain drop-shadow-sm transition-transform duration-300 hover:scale-110">
+                            </div>
+                        </div>
+                    </a>
+
+                    <div class="w-full max-w-xs px-2 mt-4">
+                        <div class="bg-white border border-black-400 rounded-xl shadow-sm overflow-hidden">
+                            <div class="bg-slate-900 py-1.5 px-3">
+                                <input type="text" readonly value="CCPP{{ ccpp.id_ccpp|stringformat:'03d' }}"
+                                    class="input-invisible w-full bg-transparent text-sm font-bold text-white border-none p-0 focus:ring-0 cursor-default text-center">
+                            </div>
+
+                            <div class="p-3 space-y-1">
+                                <div class="text-center">
+                                    <input type="text" readonly value="{{ ccpp.nombre|default:'Sin nombre' }}"
+                                        class="underline input-invisible w-full bg-transparent text-[12px] font-bold text-slate-900 border-none p-0 focus:ring-0 cursor-default text-center overflow-hidden text-ellipsis">
+                                </div>
+
+                                {% if periodo_ccpp %}
+                                <div class="flex items-center justify-center pt-2 mt-1 border-t border-slate-100">
+                                    <span class="text-[11px]">
+                                        {{ periodo_ccpp }}
+                                    </span>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <nav class="flex-grow px-3 overflow-auto">
+                {% block sidebar_menu %}{% endblock %}
+            </nav>
+
+            <!-- Información del usuario -->
+            <div class="p-2 border-t border-indigo-50">
+                <div class="flex items-center p-1.5 space-x-2 bg-indigo-50/50 rounded-md">
+                    <div class="w-6 h-6 rounded-full bg-indigo-600 flex items-center justify-center text-white font-bold text-[10px]">
+                        {% if user.first_name and user.last_name %}
+                            {{ user.first_name|slice:":1" }}{{ user.last_name|slice:":1" }}
+                        {% else %}
+                            {{ user.username|slice:":2"|upper }}
+                        {% endif %}
+                    </div>
+
+                    <div class="flex-1 min-w-0">
+                        <p class="text-xs font-semibold text-slate-900 truncate">
+                            {{ user.username }}
+                        </p>
+                        <p class="text-[11px] text-indigo-500 truncate">{{ user.email }}</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="ml-60 flex-1 h-screen overflow-y-auto flex flex-col bg-gray-50">
+            <section class="min-h-screen">
+                {% block content %}{% endblock %}
+            </section>
+        </main>
+    </div>
+
+    <script>
+        function alternarMenu() {
+            document.getElementById('sidebar-principal').classList.toggle('hidden');
+            document.getElementById('sidebar-principal').classList.toggle('lg:block');
+        }
+
+
+
+    document.documentElement.classList.add('loading');
+    document.body.classList.add('loading');
+
+    window.addEventListener('load', () => {
+        const loader = document.getElementById('page-loader');
+        if (!loader) return;
+
+        loader.style.transition = 'opacity 0.25s ease';
+        loader.style.opacity = '0';
+
+        setTimeout(() => {
+            loader.remove();
+            document.documentElement.classList.remove('loading');
+            document.body.classList.remove('loading');
+        }, 250);
+    });
+
+    </script>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

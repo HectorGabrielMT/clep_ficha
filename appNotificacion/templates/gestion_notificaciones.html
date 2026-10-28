@@ -1,0 +1,1108 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clep - Notificaciones</title>
+
+    <link rel="icon" type="image/png" href="{% static 'img/icono.png' %}">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/estiloGlobal.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+    (function () {
+        try {
+            var tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            var actual = document.cookie.split('; ').find(r => r.startsWith('django_timezone='));
+            var valorActual = actual ? decodeURIComponent(actual.split('=')[1]) : null;
+            if (tz && tz !== valorActual) {
+                document.cookie = 'django_timezone=' + encodeURIComponent(tz) + ';path=/;max-age=31536000;samesite=lax';
+                if (valorActual !== null) location.reload();
+            }
+        } catch (e) { /* Intl no soportado: se cae a UTC, no rompe nada */ }
+    })();
+    </script>
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .transicion-suave {
+            transition: all 0.2s ease;
+        }
+
+        .inspeccion-row:hover {
+            background-color: #f3f4f6;
+        }
+
+        /* ── BOTONES SECUNDARIOS (borrar respuesta, subir documento, ver ficha, eliminar notificación) ── */
+        .btn-secundario {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0;
+            border: none;
+            background: none;
+            color: #94a3b8; /* slate-400 */
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: color 0.2s ease;
+        }
+
+        .btn-secundario:hover {
+            color: #475569; /* slate-600 */
+        }
+
+        /* ── TABS DE NAVEGACIÓN (móvil y tablets ≤ 1024px) ── */
+        #tab-lista,
+        #tab-detalle {
+            display: none;
+        }
+
+        @media (max-width: 1024px) {
+            #panel-lista {
+                display: flex;
+                flex-direction: column;
+                height: 100%;
+            }
+
+            #panel-detalle {
+                display: none;
+                flex-direction: column;
+                height: 100%;
+            }
+
+            #panel-detalle.active {
+                display: flex;
+            }
+
+            #panel-lista.hidden-mobile {
+                display: none;
+            }
+
+            #tab-lista,
+            #tab-detalle {
+                display: flex;
+            }
+
+            .mobile-tabs {
+                display: flex;
+            }
+
+            .desktop-columns {
+                flex-direction: column;
+            }
+
+            .col-capitulo-tablet {
+                display: table-cell !important;
+            }
+        }
+
+        @media (min-width: 1025px) {
+            #panel-lista,
+            #panel-detalle {
+                display: flex !important;
+                flex-direction: column;
+                height: 100%;
+            }
+
+            .mobile-tabs {
+                display: none !important;
+            }
+
+            .desktop-columns {
+                flex-direction: row;
+            }
+        }
+
+        .action-header {
+            min-height: 44px;
+        }
+
+        .unit-name {
+            max-width: 200px;
+        }
+
+        @media (max-width: 480px) {
+            .unit-name {
+                max-width: 120px;
+            }
+
+            .meta-obs,
+            .meta-nota {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50 h-screen overflow-hidden">
+
+    {% include 'base/mensajes.html' %}
+
+    <div class="h-screen flex flex-col">
+
+        <!-- ══════════════ ENCABEZADO ══════════════ -->
+        <header class="bg-gradient-to-r from-slate-900 to-indigo-950 text-white shrink-0 z-30 shadow-lg">
+            <div class="w-full px-4 md:px-6 py-3.5 flex items-center justify-between gap-4 flex-wrap">
+                <div class="flex items-center gap-3 md:gap-4">
+
+                    <!-- BOTÓN ATRÁS -->
+                    <a href="{% url 'gestion_ccpp' ccpp.id_ccpp %}"
+                       class="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transicion-suave shrink-0"
+                       title="Volver">
+                        <svg class="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                        </svg>
+                    </a>
+
+                    <!-- LOGO -->
+                    <a href="{% url 'panel_principal' %}"
+                       class="flex items-center gap-2 group border-r border-slate-100 pr-3 md:pr-6 shrink-0">
+                        <img src="{% static 'img/logo_blanco.png' %}"
+                             alt="Logo clep"
+                             class="w-32 h-10 object-contain drop-shadow-sm transition-transform duration-300 hover:scale-110">
+                    </a>
+
+                    <!-- TEXTO DEL ENCABEZADO -->
+                    <div class="hidden sm:block">
+                        <div class="flex items-center gap-2">
+                            <span class="text-[10px] font-bold text-indigo-300 uppercase tracking-widest">
+                                CCPP{{ ccpp.id_ccpp|stringformat:'03d' }}
+                            </span>
+                            <span class="text-slate-500 text-[10px]">·</span>
+                            <span class="text-[11px] font-semibold text-slate-200 truncate max-w-[150px] md:max-w-[220px]"
+                                  title="{{ ccpp.nombre }}">
+                                {{ ccpp.nombre|default:'Sin nombre' }}
+                            </span>
+                        </div>
+                        <h1 class="text-sm md:text-base font-bold text-white leading-tight">
+                            Notificaciones
+                        </h1>
+                    </div>
+                </div>
+
+                <!-- BREADCRUMB -->
+                <nav class="hidden md:flex items-center gap-1.5 text-xs font-medium">
+                    {% if user.is_superuser %}
+                        <a href="{% url 'panel_principal' %}" class="text-slate-400 hover:text-white transicion-suave">Inicio</a>
+                        <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                        </svg>
+                    {% endif %}
+                    <a href="{% url 'gestion_ccpp' ccpp.id_ccpp %}" class="text-slate-400 hover:text-white transicion-suave">Cronograma</a>
+                    <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                    </svg>
+                    <button onclick="location.reload()" class="text-indigo-300 font-semibold hover:text-white transicion-suave">
+                        Notificación
+                    </button>
+                </nav>
+
+                <!-- FILTROS AÑO / MES -->
+                <form method="GET" id="formFiltros" class="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                    <div class="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-white/10 border border-white/10 text-slate-200">
+                        <svg class="w-3.5 h-3.5 text-indigo-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                        </svg>
+                        <span class="text-[10px] font-semibold uppercase tracking-wider hidden xl:inline">Período</span>
+                    </div>
+
+                    <select name="anio" id="anio"
+                            class="px-2 py-1 text-[11px] font-medium border border-white/10 rounded-lg bg-white/10 text-slate-100 focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 outline-none cursor-pointer transicion-suave">
+                        {% for anio in anios_disponibles %}
+                            <option value="{{ anio.valor }}" class="text-slate-800" {% if anio.valor|stringformat:"s" == anio_seleccionado %}selected{% endif %}>
+                                {{ anio.etiqueta }}
+                            </option>
+                        {% endfor %}
+                    </select>
+
+                    <select name="mes" id="mes"
+                            class="px-2 py-1 text-[11px] font-medium border border-white/10 rounded-lg bg-white/10 text-slate-100 focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 outline-none cursor-pointer transicion-suave">
+                        {% for mes in meses %}
+                            <option value="{{ mes }}" class="text-slate-800" {% if mes == mes_seleccionado %}selected{% endif %}>
+                                {{ mes|title }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </form>
+            </div>
+
+            <!-- TABS (móvil / tablet) -->
+            <div class="mobile-tabs border-t border-white/10">
+                <button id="tab-lista" onclick="showPanel('lista')"
+                        class="flex-1 py-2.5 text-xs font-semibold uppercase tracking-wide text-white border-b-2 border-indigo-400 transicion-suave">
+                    <i class="fas fa-list mr-1.5"></i> Unidades
+                </button>
+                <button id="tab-detalle" onclick="showPanel('detalle')"
+                        class="flex-1 py-2.5 text-xs font-semibold uppercase tracking-wide text-slate-400 border-b-2 border-transparent transicion-suave">
+                    <i class="fas fa-file-alt mr-1.5"></i> Detalle
+                </button>
+            </div>
+        </header>
+
+        <!-- ══════════════ CONTENIDO PRINCIPAL ══════════════ -->
+        <div class="flex-1 flex desktop-columns overflow-hidden">
+
+            <!-- ── COLUMNA IZQUIERDA: LISTA ── -->
+            <div id="panel-lista" class="flex-[1] h-full flex flex-col relative z-10 p-1.5 sm:p-2 overflow-hidden">
+
+                <div class="flex-1 flex flex-col bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden">
+
+                    <!-- Header contador -->
+                    <div class="sticky top-0 z-20 px-3 py-2.5 sm:px-4 sm:py-3 bg-slate-900 text-white shrink-0 flex items-center gap-2.5 border-b border-slate-800">
+                        <div class="flex items-center justify-center w-7 h-7 rounded-lg bg-slate-800 text-indigo-400 border border-slate-700/60 shadow-inner">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                            </svg>
+                        </div>
+                        <h2 class="text-xs font-bold text-slate-200 uppercase tracking-wider">Notificaciones</h2>
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 text-[10px] font-bold border border-indigo-500/30">
+                            {{ inspecciones|length }}
+                        </span>
+                    </div>
+
+                    <!-- Tabla -->
+                    {% if inspecciones %}
+                        <div class="flex-1 overflow-auto">
+                            <table class="w-full text-left align-middle text-[10.5px] border-separate border-spacing-0">
+                                <thead class="bg-slate-50 sticky top-0 z-10 border-b border-slate-200">
+                                    <tr>
+                                        <th class="w-9 px-2 py-2 text-[10px] font-bold uppercase text-slate-500 border-b border-slate-200 text-center">
+                                            <div class="flex items-center justify-center">
+                                                <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+                                                </svg>
+                                            </div>
+                                        </th>
+                                        <th class="p-0 text-[10px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200">
+                                            <button type="button" class="sort-btn w-full h-full px-2.5 py-2 uppercase flex items-center justify-between hover:bg-slate-100 transicion-suave focus:outline-none" data-col="1">
+                                                <span>Unidad</span>
+                                                <i class="fas fa-sort text-slate-300"></i>
+                                            </button>
+                                        </th>
+                                        <th class="p-0 text-[10px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200 hidden sm:table-cell col-capitulo-tablet">
+                                            <button type="button" class="sort-btn w-full h-full px-2.5 py-2 uppercase flex items-center justify-between hover:bg-slate-100 transicion-suave focus:outline-none" data-col="2">
+                                                <span>Capítulo</span>
+                                                <i class="fas fa-sort text-slate-300"></i>
+                                            </button>
+                                        </th>
+                                        <th class="p-0 w-20 text-[10px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200 hidden md:table-cell">
+                                            <button type="button" class="sort-btn w-full h-full px-2.5 py-2 uppercase flex items-center justify-between hover:bg-slate-100 transicion-suave focus:outline-none" data-col="3">
+                                                <span>DOC</span>
+                                                <i class="fas fa-sort text-slate-300"></i>
+                                            </button>
+                                        </th>
+                                        <th class="w-9 px-2 py-2 text-[10px] font-bold uppercase text-slate-500 border-b border-slate-200 text-center">
+                                            <div class="flex items-center justify-center">
+                                                <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                                                </svg>
+                                            </div>
+                                        </th>
+                                    </tr>
+                                </thead>
+
+                                <tbody class="divide-y divide-slate-100">
+                                    {% for insp in inspecciones %}
+                                        <tr class="inspeccion-row cursor-pointer transicion-suave
+                                                {% if inspeccion_seleccionada == insp.key %}
+                                                    bg-indigo-50/80 border-l-4 border-indigo-600 font-semibold text-indigo-950
+                                                {% else %}
+                                                    hover:bg-slate-50/80 text-slate-700
+                                                {% endif %}"
+                                            data-key="{{ insp.key }}">
+
+                                            <td class="p-2 text-center">
+                                                <span class="inline-flex items-center justify-center w-5 h-5 rounded-md font-bold text-[10px] bg-slate-100/80"
+                                                      style="color: {{ insp.color_inspeccion }};">
+                                                    {{ insp.codigo_inspeccion }}
+                                                </span>
+                                            </td>
+                                            <td class="p-2 max-w-xs font-medium">{{ insp.unidad }}</td>
+                                            <td class="p-2 max-w-xs hidden sm:table-cell col-capitulo-tablet text-slate-600">{{ insp.capitulo }}</td>
+                                            <td class="p-2 max-w-xs font-mono text-slate-500 hidden md:table-cell text-[10px]">
+                                                {% with d=insp.doc|stringformat:"s" %}
+                                                    {{ d|slice:":2" }} {{ d|slice:"2:4" }} {{ d|slice:"4:" }}
+                                                {% endwith %}
+                                            </td>
+                                            <td class="p-2 text-center">
+                                                <div class="relative flex justify-center items-center group">
+                                                    {% if insp.notificacion_respuesta %}
+                                                        <span class="h-2 w-2 rounded-full bg-fuchsia-500 ring-4 ring-fuchsia-100 inline-block cursor-pointer"></span>
+                                                        <div class="absolute right-full mr-2 hidden group-hover:flex items-center z-50">
+                                                            <span class="relative z-10 px-2.5 py-1 text-[11px] font-medium text-white whitespace-nowrap bg-slate-900 shadow-xl rounded-lg">Con respuesta</span>
+                                                            <div class="w-2 h-2 -ml-1 rotate-45 bg-slate-900"></div>
+                                                        </div>
+                                                    {% elif insp.envio_ejecutado %}
+                                                        <span class="h-2 w-2 rounded-full bg-emerald-500 ring-4 ring-emerald-100 inline-block cursor-pointer"></span>
+                                                        <div class="absolute right-full mr-2 hidden group-hover:flex items-center z-50">
+                                                            <span class="relative z-10 px-2.5 py-1 text-[11px] font-medium text-white whitespace-nowrap bg-slate-900 shadow-xl rounded-lg">Notificado</span>
+                                                            <div class="w-2 h-2 -ml-1 rotate-45 bg-slate-900"></div>
+                                                        </div>
+                                                    {% elif insp.notificada %}
+                                                        <span class="h-2 w-2 rounded-full bg-amber-500 ring-4 ring-amber-100 inline-block cursor-pointer"></span>
+                                                        <div class="absolute right-full mr-2 hidden group-hover:flex items-center z-50">
+                                                            <span class="relative z-10 px-2.5 py-1 text-[11px] font-medium text-white whitespace-nowrap bg-slate-900 shadow-xl rounded-lg">En espera</span>
+                                                            <div class="w-2 h-2 -ml-1 rotate-45 bg-slate-900"></div>
+                                                        </div>
+                                                    {% endif %}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% endif %}
+
+                </div><!-- /card-flotante -->
+
+            </div><!-- /panel-lista -->
+
+
+            <!-- ── COLUMNA DERECHA: DETALLE ── -->
+            <div id="panel-detalle" class="flex-[1.5] h-full flex-col overflow-hidden">
+
+                {% if detalle_inspeccion %}
+                    <div class="bg-transparent h-full flex flex-col overflow-hidden">
+                        <div class="flex-1 overflow-y-auto">
+
+                            <!-- SUB-HEADER FLOTANTE -->
+                            <div class="action-header sticky top-2 z-20 mx-3 md:mx-5 mb-3 bg-white border border-slate-200 rounded-xl shadow-sm px-3 md:px-5 py-2 flex items-center justify-between gap-2 flex-wrap">
+                                <div class="flex items-center gap-2 min-w-0 shrink">
+                                    <span class="shrink-0 inline-block px-2 py-0.5 rounded text-white text-[10px] font-bold"
+                                        style="background-color: {{ detalle_inspeccion.color_inspeccion }};">
+                                        {{ detalle_inspeccion.codigo_inspeccion }}
+                                    </span>
+                                    <span class="unit-name text-[11px] font-semibold text-slate-700">
+                                        {{ detalle_inspeccion.unidad }}
+                                    </span>
+                                </div>
+
+                                <div class="flex items-center gap-2 flex-wrap justify-end shrink-0">
+                                    {% if detalle_inspeccion.observacion_unidad %}
+                                        <div class="meta-obs flex flex-col items-end leading-tight">
+                                            <span class="text-[8px] text-slate-400 uppercase font-bold tracking-tighter leading-none">Observación</span>
+                                            <span class="text-[10px] text-slate-600 font-medium">{{ detalle_inspeccion.observacion_unidad }}</span>
+                                        </div>
+                                    {% endif %}
+
+                                    {% if detalle_inspeccion.nota_cronograma %}
+                                        <div class="meta-nota flex flex-col items-end leading-tight border-l border-slate-200 pl-2">
+                                            <span class="text-[8px] text-slate-400 uppercase font-bold tracking-tighter leading-none">Nota</span>
+                                            <span class="text-[10px] text-slate-500 italic">{{ detalle_inspeccion.nota_cronograma }}</span>
+                                        </div>
+                                    {% endif %}
+
+                                    <div class="h-6 w-px bg-slate-200 mx-0.5 hidden sm:block"></div>
+
+                                    <button type="submit" form="form-respuesta"
+                                            class="inline-flex items-center gap-1.5 bg-slate-800 hover:bg-slate-900 active:scale-95 text-white text-[10px] font-bold uppercase tracking-wider py-1.5 px-4 rounded-full shadow-sm transicion-suave shrink-0">
+                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                        </svg>
+                                        Guardar
+                                    </button>
+
+                                    {% if user.is_superuser and notificacion %}
+                                        <button type="button" onclick="confirmarEliminacionNotificacion({{ notificacion.id_notificacion }})" class="btn-secundario shrink-0">
+                                            Eliminar
+                                        </button>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <!-- /action-header -->
+
+                            <!-- FORMULARIO DE RESPUESTA (siempre visible, exista o no la notificación) -->
+                            <form method="POST"
+                                action="{% url 'guardar_notificacion' ccpp.id_ccpp %}"
+                                id="form-respuesta"
+                                enctype="multipart/form-data"
+                                class="px-4 md:px-6 pb-4">
+
+                                {% csrf_token %}
+                                <input type="hidden" name="anio" value="{{ anio_seleccionado }}">
+                                <input type="hidden" name="mes" value="{{ mes_seleccionado }}">
+                                <input type="hidden" name="key" value="{{ inspeccion_seleccionada }}">
+                                <input type="hidden" name="unidad" value="{{ detalle_inspeccion.id_unidad }}">
+                                <input type="hidden" id="fecha_notificacion" value="{{ notificacion.fecha|date:'Y-m-d' }}">
+                                <input type="hidden" id="zona_horaria" name="zona_horaria" value="UTC">
+
+                                {% if user.is_superuser %}
+                                    {% with zona_horaria=zona_horaria_envio %}
+                                        <div class="bg-slate-50/80 backdrop-blur-sm border border-slate-200/80 rounded-2xl p-3.5 mb-4 shadow-sm transicion-suave hover:border-slate-300">
+                                            <div class="flex items-center justify-between gap-3 flex-wrap sm:flex-nowrap">
+                                                <div class="flex items-center gap-3 min-w-0 flex-1">
+                                                    <div class="flex items-center justify-center w-8 h-8 rounded-xl bg-indigo-100 text-indigo-600 shrink-0 shadow-inner">
+                                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                                        </svg>
+                                                    </div>
+                                                    <div class="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-3 min-w-0">
+                                                        <label for="fecha_envio_programado" class="text-xs font-semibold text-slate-800 tracking-tight whitespace-nowrap cursor-pointer">
+                                                            Envío Programado
+                                                        </label>
+                                                        <input type="datetime-local"
+                                                            id="fecha_envio_programado"
+                                                            name="fecha_envio_programado"
+                                                            value="{% if notificacion.fecha_envio_programado and not notificacion.envio_ejecutado %}{{ notificacion.fecha_envio_programado|date:'Y-m-d\TH:i' }}{% endif %}"
+                                                            title="Fecha y hora de envío. Debes seleccionar al menos un correo en “Para”. Deja vacío para no programar."
+                                                            class="px-3 py-1.5 border border-slate-200 rounded-xl text-xs text-slate-700 bg-white shadow-xs focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transicion-suave outline-none">
+                                                    </div>
+                                                </div>
+
+                                                <div class="flex items-center gap-2 shrink-0">
+                                                    {% if notificacion.fecha_envio_programado and not notificacion.envio_ejecutado %}
+                                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-amber-50 text-amber-800 border border-amber-200/60 shadow-2xs">
+                                                            <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                                                            {{ notificacion.fecha_envio_programado|date:"d/m/Y H:i" }}
+                                                        </span>
+                                                        <button type="submit" name="cancelar_envio_programado" value="1" form="form-respuesta"
+                                                                class="px-2.5 py-1 text-xs font-medium text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-100 rounded-lg transicion-suave cursor-pointer">
+                                                            Cancelar
+                                                        </button>
+                                                    {% elif notificacion.envio_ejecutado %}
+                                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-emerald-50 text-emerald-800 border border-emerald-200/60 shadow-2xs">
+                                                            <svg class="w-3.5 h-3.5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                                            </svg>
+                                                            Enviado
+                                                        </span>
+                                                    {% endif %}
+                                                    <span class="text-[11px] text-slate-400 italic hidden xl:inline ml-2">Requiere destinatario en "Para"</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endwith %}
+                                {% endif %}
+
+                                {% if user.is_superuser %}
+                                    <div class="bg-white/80 backdrop-blur-sm border border-slate-200/80 rounded-2xl p-5 md:p-6 mb-4 shadow-sm mt-3 transicion-suave">
+                                        <div class="flex items-center justify-between pb-4 mb-6 border-b border-slate-100">
+                                            <div class="flex items-center gap-2.5">
+                                                <div class="flex items-center justify-center w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 shadow-xs">
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                                                    </svg>
+                                                </div>
+                                                <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider">Notificación</h3>
+                                            </div>
+
+                                            {% if notificacion.envio_ejecutado %}
+                                                <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200/60 shadow-2xs">
+                                                    <svg class="w-3.5 h-3.5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                                    </svg>
+                                                    Notificado {{ notificacion.fecha_envio_programado|date:"d/m/Y" }}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+
+                                        <div class="space-y-6">
+                                            <div>
+                                                <label for="asunto" class="block text-[11px] font-semibold text-slate-500 uppercase mb-1.5 tracking-wider">Notificar A</label>
+                                                <input type="text" name="asunto" id="asunto"
+                                                    class="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-xs text-slate-700 bg-slate-50/50 hover:bg-white focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transicion-suave outline-none"
+                                                    value="{{ detalle_inspeccion.notificacionA_inspeccion|default:"—" }}">
+                                            </div>
+
+                                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2">
+                                                <div class="min-w-0">
+                                                    <div class="flex items-center gap-2 pb-2 mb-3 border-b border-slate-200/80">
+                                                        <span class="w-2 h-2 rounded-full bg-indigo-600"></span>
+                                                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider">Para</label>
+                                                    </div>
+                                                    <div class="space-y-1.5 max-h-[400px] overflow-y-auto pr-2">
+                                                        {% for correo in correos_para %}
+                                                            <label class="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 border border-transparent hover:border-slate-100 cursor-pointer transicion-suave group">
+                                                                <input type="checkbox" name="para" value="{{ correo }}" id="para_{{ forloop.counter }}"
+                                                                    {% if correo in notificacion.para %}checked{% endif %}
+                                                                    class="w-4 h-4 text-indigo-600 border-slate-300 rounded focus:ring-2 focus:ring-indigo-500/20 focus:ring-offset-0 transicion-suave shrink-0 cursor-pointer">
+                                                                <span class="text-xs text-slate-600 group-hover:text-slate-900 font-medium break-all leading-snug select-none">{{ correo }}</span>
+                                                            </label>
+                                                        {% empty %}
+                                                            <p class="text-xs text-slate-400 italic py-2">No hay correos disponibles</p>
+                                                        {% endfor %}
+                                                    </div>
+                                                </div>
+
+                                                <div class="min-w-0">
+                                                    <div class="flex items-center gap-2 pb-2 mb-3 border-b border-slate-200/80">
+                                                        <span class="w-2 h-2 rounded-full bg-slate-400"></span>
+                                                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider">CC (Copia)</label>
+                                                    </div>
+                                                    <div class="space-y-1.5 max-h-[400px] overflow-y-auto pr-2">
+                                                        {% for correo in correos_cc %}
+                                                            <label class="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 border border-transparent hover:border-slate-100 cursor-pointer transicion-suave group">
+                                                                <input type="checkbox" name="cc" value="{{ correo }}" id="cc_{{ forloop.counter }}"
+                                                                    {% if correo in notificacion.cc %}checked{% endif %}
+                                                                    class="w-4 h-4 text-indigo-600 border-slate-300 rounded focus:ring-2 focus:ring-indigo-500/20 focus:ring-offset-0 transicion-suave shrink-0 cursor-pointer">
+                                                                <span class="text-xs text-slate-600 group-hover:text-slate-900 font-medium break-all leading-snug select-none">{{ correo }}</span>
+                                                            </label>
+                                                        {% empty %}
+                                                            <p class="text-xs text-slate-400 italic py-2">No hay correos disponibles</p>
+                                                        {% endfor %}
+                                                    </div>
+                                                </div>
+
+                                                <div class="min-w-0">
+                                                    <div class="flex items-center gap-2 pb-2 mb-3 border-b border-slate-200/80">
+                                                        <span class="w-2 h-2 rounded-full bg-slate-400"></span>
+                                                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider">CCO (Oculta)</label>
+                                                    </div>
+                                                    <div class="space-y-1.5 max-h-[400px] overflow-y-auto pr-2">
+                                                        {% for correo in correos_cco %}
+                                                            <label class="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 border border-transparent hover:border-slate-100 cursor-pointer transicion-suave group">
+                                                                <input type="checkbox" name="cco" value="{{ correo }}" id="cco_{{ forloop.counter }}"
+                                                                    {% if correo in notificacion.cco %}checked{% endif %}
+                                                                    class="w-4 h-4 text-indigo-600 border-slate-300 rounded focus:ring-2 focus:ring-indigo-500/20 focus:ring-offset-0 transicion-suave shrink-0 cursor-pointer">
+                                                                <span class="text-xs text-slate-600 group-hover:text-slate-900 font-medium break-all leading-snug select-none">{{ correo }}</span>
+                                                            </label>
+                                                        {% empty %}
+                                                            <p class="text-xs text-slate-400 italic py-2">No hay correos disponibles</p>
+                                                        {% endfor %}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endif %}
+
+                                <!-- SECCIÓN: RESPUESTA Y ARCHIVOS -->
+                                <div class="bg-white/80 backdrop-blur-sm border border-slate-200/80 rounded-2xl p-5 md:p-6 mb-6 shadow-sm mt-3 transicion-suave">
+                                    <div class="flex items-center justify-between pb-4 mb-6 border-b border-slate-100">
+                                        <div class="flex items-center gap-2.5">
+                                            <div class="flex items-center justify-center w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 shadow-xs">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/>
+                                                </svg>
+                                            </div>
+                                            <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider">Respuesta</h3>
+                                        </div>
+
+                                        {% if notificacion %}
+                                            <button type="button" onclick="confirmarEliminacionRespuesta({{ notificacion.id_notificacion }})"
+                                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-rose-600 hover:text-rose-700 bg-rose-50/60 hover:bg-rose-100/80 rounded-xl border border-rose-200/60 transicion-suave cursor-pointer">
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                                </svg>
+                                                Borrar respuesta
+                                            </button>
+                                        {% endif %}
+                                    </div>
+
+                                    <div class="space-y-6">
+                                        <div class="grid grid-cols-1 md:grid-cols-6 gap-5 items-start">
+                                            <div class="md:col-span-2 min-w-0">
+                                                <label for="fecha_respuesta" class="block text-[11px] font-semibold text-slate-500 uppercase mb-1.5 tracking-wider">Fecha de Respuesta</label>
+                                                <input type="date" id="fecha_respuesta" name="fecha_respuesta"
+                                                    value="{{ notificacion.FechaResp|date:'Y-m-d' }}"
+                                                    class="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-xs text-slate-700 bg-slate-50/50 hover:bg-white focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transicion-suave">
+                                                <p id="fecha-error" class="hidden mt-1 text-[11px] text-rose-600 font-medium">
+                                                    La fecha de respuesta no puede ser anterior a la fecha de notificación
+                                                </p>
+                                            </div>
+
+                                            <div class="md:col-span-4 flex items-center pt-2 md:pt-7">
+                                                <label class="inline-flex items-center gap-2.5 cursor-pointer select-none group">
+                                                    <input type="checkbox" id="inspeccion_ejecutada" name="inspeccion_ejecutada"
+                                                        {% if notificacion.RespInspEjecutada %}checked{% endif %}
+                                                        class="w-4 h-4 text-indigo-600 border-slate-300 rounded focus:ring-2 focus:ring-indigo-500/20 focus:ring-offset-0 transicion-suave shrink-0 cursor-pointer">
+                                                    <span class="text-xs font-semibold text-slate-700 group-hover:text-slate-900 transicion-suave">Inspección Ejecutada</span>
+                                                </label>
+                                            </div>
+                                        </div>
+
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                            <div>
+                                                <label for="revision_respuesta" class="block text-[11px] font-semibold text-slate-500 uppercase mb-1.5 tracking-wider">Personal/Empresa Revisión</label>
+                                                <textarea id="revision_respuesta" name="revision_respuesta" rows="3"
+                                                        class="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-xs text-slate-700 bg-slate-50/50 hover:bg-white focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none resize-none transicion-suave">{{ notificacion.RespRevision|default:'' }}</textarea>
+                                            </div>
+                                            <div>
+                                                <label for="controlador_respuesta" class="block text-[11px] font-semibold text-slate-500 uppercase mb-1.5 tracking-wider">Controlador</label>
+                                                <textarea id="controlador_respuesta" name="controlador_respuesta" rows="3"
+                                                        class="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-xs text-slate-700 bg-slate-50/50 hover:bg-white focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none resize-none transicion-suave">{{ notificacion.RespControlador|default:'' }}</textarea>
+                                            </div>
+                                            <div>
+                                                <label for="via_respuesta" class="block text-[11px] font-semibold text-slate-500 uppercase mb-1.5 tracking-wider">Notificación Contestada</label>
+                                                <textarea id="via_respuesta" name="via_respuesta" rows="3"
+                                                        class="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-xs text-slate-700 bg-slate-50/50 hover:bg-white focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none resize-none transicion-suave">{{ notificacion.RespVia|default:'' }}</textarea>
+                                            </div>
+                                            <div>
+                                                <label for="observacion_respuesta" class="block text-[11px] font-semibold text-slate-500 uppercase mb-1.5 tracking-wider">Observaciones</label>
+                                                <textarea id="observacion_respuesta" name="observacion_respuesta" rows="3"
+                                                        class="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-xs text-slate-700 bg-slate-50/50 hover:bg-white focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none resize-none transicion-suave">{{ notificacion.RespObservacion|default:'' }}</textarea>
+                                            </div>
+                                        </div>
+
+                                        <div class="pt-2 border-t border-slate-100">
+                                            <div class="flex items-center justify-between mb-3">
+                                                <span class="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Documentos</span>
+                                                <label class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-indigo-600 hover:text-indigo-700 bg-indigo-50/70 hover:bg-indigo-100/70 rounded-xl border border-indigo-100 transicion-suave cursor-pointer">
+                                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                                                    </svg>
+                                                    <input type="file" name="nuevos_archivos" id="nuevos_archivos" multiple onchange="updateFileName(this)" class="hidden">
+                                                    <span id="file-label">Subir documento</span>
+                                                </label>
+                                            </div>
+                                            <div class="flex flex-wrap gap-2">
+                                                {% for doc in documentos %}
+                                                    <div class="inline-flex items-center gap-2 bg-slate-50 hover:bg-slate-100/80 border border-slate-200/80 rounded-xl py-1.5 px-3 text-xs transicion-suave group">
+                                                        <svg class="w-3.5 h-3.5 text-slate-400 group-hover:text-indigo-500 transicion-suave" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                                        </svg>
+                                                        <span class="text-slate-700 font-medium max-w-[150px] truncate" title="{{ doc.nombre_original }}">{{ doc.nombre_original }}</span>
+                                                        <div class="flex items-center gap-1 border-l border-slate-200 pl-2 ml-1">
+                                                            <a href="{{ doc.archivo.url }}" target="_blank" class="p-0.5 text-slate-400 hover:text-indigo-600 transicion-suave" title="Ver">
+                                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                                                </svg>
+                                                            </a>
+                                                            <button type="button" onclick="confirmarEliminacionDocumento({{ doc.id }})" class="p-0.5 text-slate-400 hover:text-rose-600 transicion-suave" title="Eliminar">
+                                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                                                </svg>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                {% empty %}
+                                                    <p id="no-files-msg" class="text-xs italic text-slate-400 py-1">No hay documentos adjuntos</p>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- SECCIÓN: CONTROL DE FICHA -->
+                                <div class="bg-white/80 backdrop-blur-sm border border-slate-200/80 rounded-2xl p-5 md:p-6 mb-6 shadow-sm transicion-suave">
+                                    <div class="flex items-center justify-between pb-4 mb-6 border-b border-slate-100">
+                                        <div class="flex items-center gap-2.5">
+                                            <div class="flex items-center justify-center w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 shadow-xs">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/>
+                                                </svg>
+                                            </div>
+                                            <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider">Control de Ficha</h3>
+                                        </div>
+
+                                        <button type="button"
+                                                data-modal-ficha-trigger
+                                                data-id-ccpp="{{ ccpp.id_ccpp }}"
+                                                data-id-unidad="{{ detalle_inspeccion.id_unidad }}"
+                                                class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 hover:text-slate-900 bg-slate-100/80 hover:bg-slate-200/80 rounded-xl border border-slate-200/60 transicion-suave cursor-pointer shrink-0">
+                                            <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
+                                            </svg>
+                                            {% if ficha_asignada %}Cambiar Ficha{% else %}Asignar Ficha{% endif %}
+                                        </button>
+                                    </div>
+
+                                    {% if ficha_asignada %}
+                                        <div class="max-w-2xl">
+                                            <label for="ficha_control" class="block text-[11px] font-semibold text-slate-500 uppercase mb-2 tracking-wider">
+                                                Seleccionar Control &middot; <span class="text-indigo-600 font-bold">{{ ficha_asignada.titulo }}</span>
+                                            </label>
+                                            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                                                <div class="relative flex-1">
+                                                    <select id="ficha_control" name="ficha_control"
+                                                            class="appearance-none w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-white focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none text-xs text-slate-700 cursor-pointer transicion-suave pr-9">
+                                                        <option value="" class="text-slate-400">Sin control asignado</option>
+                                                        {% for control in controles_disponibles %}
+                                                            <option value="{{ control.pk }}" {% if notificacion.id_ficha_control_id == control.pk %}selected{% endif %}>
+                                                                #{{ control.codigo_control }} — {{ control.periodo }}{% if control.id_inspeccion %} ({{ control.id_inspeccion.codigo_inspeccion }}){% endif %}
+                                                            </option>
+                                                        {% empty %}
+                                                            <option value="" disabled>Esta ficha no tiene controles registrados</option>
+                                                        {% endfor %}
+                                                    </select>
+                                                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400">
+                                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                                                        </svg>
+                                                    </div>
+                                                </div>
+
+                                                <a href="{% url 'exportar_ficha_pdf' ficha_asignada.id ccpp.pk 'false' %}{% if notificacion.id_ficha_control_id %}?control={{ notificacion.id_ficha_control_id }}{% endif %}"
+                                                target="_blank"
+                                                class="inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 text-xs font-medium text-indigo-600 hover:text-indigo-700 bg-indigo-50/70 hover:bg-indigo-100/70 rounded-xl border border-indigo-100 transicion-suave cursor-pointer shrink-0">
+                                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                                    </svg>
+                                                    Ver Ficha
+                                                </a>
+                                            </div>
+                                        </div>
+                                    {% else %}
+                                        <div class="flex items-center gap-3 p-3.5 rounded-xl bg-slate-50 border border-slate-200/60 text-slate-500">
+                                            <svg class="w-4 h-4 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                            </svg>
+                                            <p class="text-xs italic">
+                                                Esta unidad no tiene una ficha asignada. Usa <strong>"Asignar Ficha"</strong> para vincular una antes de seleccionar un control.
+                                            </p>
+                                        </div>
+                                    {% endif %}
+                                </div>
+
+                            </form>
+
+                        </div><!-- /flex-1 overflow -->
+                    </div>
+
+                {% else %}
+                    <div class="h-full flex items-center justify-center p-8">
+                        <div class="text-center">
+                            <div class="text-slate-300 mb-3">
+                                <i class="fas fa-hand-pointer text-4xl"></i>
+                            </div>
+                            <p class="text-sm text-slate-500">Seleccione una inspección de la lista</p>
+                        </div>
+                    </div>
+                {% endif %}
+
+            </div><!-- /panel-detalle -->
+
+        </div><!-- /contenido principal -->
+
+    </div><!-- /h-screen -->
+
+
+    <!-- ══════════════ BOTONES FLOTANTES ══════════════ -->
+    {% if user.is_superuser and notificacion %}
+        <div class="fixed bottom-6 right-6 flex flex-col gap-3 z-50">
+
+            <button type="button"
+                    id="btn-whatsapp-flotante"
+                    onclick="notificarWhatsappEnDesarrollo()"
+                    class="w-12 h-12 rounded-full bg-green-500 hover:bg-green-600 active:scale-95 text-white shadow-lg flex items-center justify-center transicion-suave">
+                <i class="fab fa-whatsapp text-xl"></i>
+            </button>
+
+            <button type="button"
+                    onclick="GestorCorreo.abrir('{{ ccpp.id_ccpp }}', '{{ detalle_inspeccion.id_unidad }}', '{{ detalle_inspeccion.inspeccion_id }}', {% if notificacion %}'{{ notificacion.id_notificacion }}'{% else %}null{% endif %}, '{{ anio_seleccionado }}', '{{ mes_seleccionado }}')"
+                    class="w-12 h-12 rounded-full bg-blue-600 hover:bg-blue-700 active:scale-95 text-white shadow-lg flex items-center justify-center transicion-suave">
+                <i class="fas fa-envelope text-lg"></i>
+            </button>
+
+        </div>
+    {% endif %}
+
+    {% include 'includes/modal_SeleccionarUnidad.html' %}
+    {% include "includes/modal_redactar_correo.html" %}
+
+
+    <!-- ══════════════ SCRIPTS ══════════════ -->
+    <script>
+
+        /* ── WHATSAPP (funcionalidad en desarrollo) ── */
+        function notificarWhatsappEnDesarrollo() {
+            Swal.fire({
+                title: 'Próximamente',
+                text: 'El envío de WhatsApp está en desarrollo.',
+                icon: 'info',
+                width: '300px',
+                confirmButtonText: 'Entendido',
+                customClass: {
+                    popup:         'rounded-sm border border-gray-200 shadow-xl',
+                    title:         'text-sm font-bold text-gray-800 pt-4',
+                    htmlContainer: 'text-xs text-gray-600',
+                    confirmButton: 'bg-slate-700 hover:bg-slate-800 text-white text-[10px] font-bold py-2 px-4 rounded-sm mx-1',
+                },
+                buttonsStyling: false,
+            });
+        }
+
+        /* ── CAMBIO DE PESTAÑA (móvil / tablet ≤ 1024px) ── */
+        function showPanel(panel) {
+            const lista   = document.getElementById('panel-lista');
+            const detalle = document.getElementById('panel-detalle');
+            const tabL    = document.getElementById('tab-lista');
+            const tabD    = document.getElementById('tab-detalle');
+
+            sessionStorage.setItem('activePanel', panel);
+
+            const activo   = ['text-white', 'border-indigo-400'];
+            const inactivo = ['text-slate-400', 'border-transparent'];
+
+            if (panel === 'lista') {
+                lista.classList.remove('hidden-mobile');
+                detalle.classList.remove('active');
+                tabL.classList.add(...activo);
+                tabL.classList.remove(...inactivo);
+                tabD.classList.add(...inactivo);
+                tabD.classList.remove(...activo);
+            } else {
+                lista.classList.add('hidden-mobile');
+                detalle.classList.add('active');
+                tabD.classList.add(...activo);
+                tabD.classList.remove(...inactivo);
+                tabL.classList.add(...inactivo);
+                tabL.classList.remove(...activo);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+
+            /* ── CLIC EN FILA: en móvil/tablet cambia automáticamente al panel de detalle ── */
+            document.querySelectorAll('.inspeccion-row').forEach(fila => {
+                fila.addEventListener('click', function () {
+                    const key = this.dataset.key;
+                    const urlParams = new URLSearchParams(window.location.search);
+                    urlParams.set('key', key);
+
+                    if (window.innerWidth <= 1024) {
+                        sessionStorage.setItem('openDetailTab', '1');
+                    }
+
+                    window.location.href = '?' + urlParams.toString();
+                });
+            });
+
+            if (window.innerWidth <= 1024) {
+                const navegandoANuevo = sessionStorage.getItem('openDetailTab') === '1';
+
+                if (navegandoANuevo) {
+                    sessionStorage.removeItem('openDetailTab');
+                    sessionStorage.setItem('activePanel', 'detalle');
+                    showPanel('detalle');
+                } else if (sessionStorage.getItem('activePanel') === 'detalle') {
+                    showPanel('detalle');
+                }
+            }
+
+            /* ── FILTROS DE SELECCIÓN ── */
+            const selectAnio = document.getElementById('anio');
+            const selectMes  = document.getElementById('mes');
+
+            selectAnio?.addEventListener('change', () => document.getElementById('formFiltros').submit());
+            selectMes?.addEventListener('change', () => document.getElementById('formFiltros').submit());
+
+            /* ── ZONA HORARIA DEL CLIENTE ── */
+            const zonaHorariaInput = document.getElementById('zona_horaria');
+            if (zonaHorariaInput) {
+                try {
+                    zonaHorariaInput.value = Intl.DateTimeFormat().resolvedOptions().timeZone;
+                } catch (e) { /* se queda en UTC */ }
+            }
+
+            /* ── ORDENAMIENTO DE TABLA ── */
+            const tableBody = document.querySelector('tbody');
+            if (!tableBody) return;
+
+            const filasOriginales = Array.from(tableBody.querySelectorAll('tr'));
+
+            let columnaActiva = localStorage.getItem('tabla_columna_activa');
+            let ordenActivo   = localStorage.getItem('tabla_orden_activo') === 'true';
+
+            if (columnaActiva !== null) {
+                columnaActiva = parseInt(columnaActiva);
+                aplicarVisualOrden(columnaActiva);
+                ordenarTabla(columnaActiva);
+            }
+
+            document.querySelectorAll('.sort-btn').forEach(btn => {
+                btn.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    const colIndex = parseInt(this.dataset.col);
+
+                    if (columnaActiva === colIndex && ordenActivo) {
+                        limpiarFiltro();
+                    } else {
+                        columnaActiva = colIndex;
+                        ordenActivo   = true;
+                        localStorage.setItem('tabla_columna_activa', colIndex);
+                        localStorage.setItem('tabla_orden_activo', 'true');
+                        aplicarVisualOrden(colIndex);
+                        ordenarTabla(colIndex);
+                    }
+                });
+            });
+
+            function aplicarVisualOrden(colIndex) {
+                resetearIconos();
+                const btn = document.querySelector(`.sort-btn[data-col="${colIndex}"]`);
+                if (btn) {
+                    btn.querySelector('i').className = 'fas fa-sort-alpha-down text-blue-600';
+                }
+            }
+
+            function ordenarTabla(colIndex) {
+                if (colIndex === 0) return;
+
+                const filas = Array.from(tableBody.querySelectorAll('tr'));
+                filas.sort((a, b) => {
+                    const celdaA = a.children[colIndex];
+                    const celdaB = b.children[colIndex];
+                    if (!celdaA || !celdaB) return 0;
+                    return celdaA.innerText.trim().toLowerCase()
+                        .localeCompare(celdaB.innerText.trim().toLowerCase(), 'es', { numeric: true });
+                });
+
+                filas.forEach(f => tableBody.appendChild(f));
+            }
+
+            function limpiarFiltro() {
+                localStorage.removeItem('tabla_columna_activa');
+                localStorage.removeItem('tabla_orden_activo');
+                columnaActiva = null;
+                ordenActivo   = false;
+                filasOriginales.forEach(f => tableBody.appendChild(f));
+                resetearIconos();
+            }
+
+            function resetearIconos() {
+                document.querySelectorAll('.sort-btn i').forEach(icon => {
+                    icon.className = 'fas fa-sort text-gray-500';
+                });
+            }
+
+        });
+
+
+        /* ── DOCUMENTOS: nombre de archivo seleccionado ── */
+        function updateFileName(input) {
+            const label = document.getElementById('file-label');
+            const files = input.files;
+
+            if (files.length === 1) {
+                label.innerText = files[0].name;
+                label.classList.replace('text-slate-500', 'text-indigo-600');
+            } else if (files.length > 1) {
+                label.innerText = files.length + ' archivos seleccionados';
+                label.classList.replace('text-slate-500', 'text-indigo-600');
+            } else {
+                label.innerText = 'Adjuntar Archivos';
+                label.classList.replace('text-indigo-600', 'text-slate-500');
+            }
+        }
+
+
+        /* ── CONFIRMACIONES (SweetAlert2) ── */
+        const OPCIONES_CONFIRMACION = {
+            icon: 'question',
+            width: '300px',
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            showCancelButton: true,
+            confirmButtonText: 'Si, Eliminar',
+            cancelButtonText: 'No, Cancelar',
+            reverseButtons: true,
+            focusCancel: true,
+            buttonsStyling: false,
+            customClass: {
+                popup:         'rounded-sm border border-gray-200 shadow-xl',
+                title:         'text-sm font-bold text-gray-800 pt-4',
+                htmlContainer: 'text-xs text-gray-600',
+                confirmButton: 'bg-red-700 hover:bg-red-800 text-white text-[10px] font-bold py-2 px-4 rounded-sm mx-1 order-2',
+                cancelButton:  'bg-slate-600 hover:bg-slate-700 text-white text-[10px] font-bold py-2 px-4 rounded-sm mx-1 order-1 ring-2 ring-slate-300 ring-offset-2',
+            },
+        };
+
+        async function confirmarEliminacionRespuesta(notificacionId) {
+            const result = await Swal.fire({
+                ...OPCIONES_CONFIRMACION,
+                title: '¿Eliminar Respuesta?',
+                text: 'Esta acción es definitiva.',
+            });
+
+            if (!result.isConfirmed) return;
+
+            try {
+                const response = await fetch(`/notificaciones/eliminar-respuesta/${notificacionId}/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+                if (!response.ok) throw new Error('Error en la eliminación');
+                location.reload();
+            } catch (error) {
+                Swal.fire('Error', 'No se pudo eliminar la respuesta.', 'error');
+            }
+        }
+
+        async function confirmarEliminacionNotificacion(notificacionId) {
+            const result = await Swal.fire({
+                ...OPCIONES_CONFIRMACION,
+                title: '¿Eliminar Notificación?',
+                text: 'Esta acción es definitiva.',
+            });
+
+            if (!result.isConfirmed) return;
+
+            try {
+                const formData = new FormData();
+                formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+                const response = await fetch(`/notificaciones/eliminar-notificacion/${notificacionId}/`, {
+                    method: 'POST',
+                    body: formData,
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+
+                const data = await response.json();
+                if (!data.success) throw new Error(data.error || 'Error desconocido');
+
+                const urlParams = new URLSearchParams(window.location.search);
+                urlParams.delete('key');
+                window.location.href = '?' + urlParams.toString();
+            } catch (error) {
+                Swal.fire({
+                    title: 'Error',
+                    text: 'No se pudo eliminar: ' + error.message,
+                    icon: 'error',
+                    width: '300px',
+                    customClass: { popup: 'rounded-sm', title: 'text-sm' }
+                });
+                console.error(error);
+            }
+        }
+
+        async function confirmarEliminacionDocumento(documentoId) {
+            const result = await Swal.fire({
+                ...OPCIONES_CONFIRMACION,
+                title: '¿Eliminar Documento?',
+                text: 'Esta acción es definitiva.',
+            });
+
+            if (!result.isConfirmed) return;
+
+            try {
+                const response = await fetch(`/notificaciones/eliminar-documento/${documentoId}/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+                if (!response.ok) throw new Error('Error en la eliminación');
+                location.reload();
+            } catch (error) {
+                Swal.fire({
+                    title: 'Error',
+                    text: 'No se pudo eliminar el documento.',
+                    icon: 'error',
+                    confirmButtonText: 'Entendido',
+                    customClass: { confirmButton: 'bg-slate-600 text-white px-4 py-2 rounded-sm text-xs' },
+                    buttonsStyling: false
+                });
+            }
+        }
+
+    </script>
+
+</body>
+</html>

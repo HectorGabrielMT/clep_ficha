@@ -1,0 +1,1476 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clep · {{ unidad.unidad }} · Notificaciones</title>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- FUENTE POPPINS -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" href="{% static 'img/icono.png' %}">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Poppins', 'sans-serif'],
+                    },
+                    colors: {
+                        indigo: {
+                            950: '#1e1b4b',
+                        },
+                        fondosoft: '#f0f4f8',
+                    },
+                    boxShadow: {
+                        'soft': '0 10px 40px -10px rgba(0,0,0,0.05)',
+                        'panel': '-4px 0 24px rgba(0,0,0,0.02)',
+                    }
+                },
+            },
+        };
+    </script>
+    <style>
+        html, body { height: 100%; }
+        body { font-family: 'Poppins', sans-serif; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 999px; }
+        ::-webkit-scrollbar-thumb:hover { background-color: #94a3b8; }
+        ::-webkit-scrollbar-track { background-color: transparent; }
+        .transicion-suave { transition: all 0.3s ease; }
+        .scrollbar-none::-webkit-scrollbar { display: none; }
+        .scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* SweetAlert2 debe quedar SIEMPRE por encima de cualquier modal
+           propio de la página (modal-correos, redactar_correo, etc.),
+           que usan hasta z-[9999]. */
+        .swal2-container { z-index: 100000 !important; }
+    </style>
+</head>
+<body class="bg-fondosoft h-screen text-slate-800 flex flex-col overflow-hidden">
+
+    <input type="hidden" id="zona_horaria_global" value="UTC">
+    <script>
+    try {
+        document.getElementById('zona_horaria_global').value = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    } catch (e) { /* se queda en UTC */ }
+    </script>
+
+    {% include 'base/mensajes.html' %}
+
+    <!-- ══════════════ ENCABEZADO ══════════════ -->
+    <header class="bg-gradient-to-r from-slate-900 to-indigo-950 text-white shrink-0 z-30 shadow-lg">
+        <div class="w-full px-4 md:px-6 py-3.5 flex items-center justify-between gap-4 flex-wrap">
+            <div class="flex items-center gap-3 md:gap-4">
+                <!-- BOTÓN ATRÁS -->
+                <a href="{% url 'gestion_ccpp' ccpp.id_ccpp %}"
+                id="link-volver"
+                onclick="return confirmarNavegacion(event, this)"
+                class="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transicion-suave shrink-0"
+                title="Volver">
+                    <svg class="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                    </svg>
+                </a>
+
+                <!-- LOGO -->
+                <a href="{% url 'panel_principal' %}"
+                id="link-logo"
+                onclick="return confirmarNavegacion(event, this)"
+                class="flex items-center gap-2 group border-r border-slate-100 pr-3 md:pr-6 shrink-0">
+                    <img src="{% static 'img/logo_blanco.png' %}"
+                         alt="Logo clep"
+                         class="w-32 h-10 object-contain drop-shadow-sm transition-transform duration-300 hover:scale-110">
+                </a>
+
+                <!-- TEXTO DEL HEADER -->
+                <div class="hidden sm:block">
+                    <div class="flex items-center gap-2">
+                        <span class="text-[10px] font-bold text-indigo-300 uppercase tracking-widest">
+                            CCPP{{ ccpp.id_ccpp|stringformat:'03d' }}
+                        </span>
+                        <span class="text-slate-500 text-[10px]">·</span>
+                        <span class="text-[11px] font-semibold text-slate-200 truncate max-w-[150px] md:max-w-[220px]" title="{{ ccpp.nombre }}">
+                            {{ ccpp.nombre|default:'Sin nombre' }}
+                        </span>
+                    </div>
+                    <h1 class="text-sm md:text-base font-bold text-white leading-tight">
+                        {{ unidad.unidad }} · Notificaciones
+                    </h1>
+                </div>
+            </div>
+
+            <!-- Solo indicador de estado en el header, los botones de acción
+                 están arriba de la tabla -->
+            <div class="flex items-center gap-2 flex-wrap">
+                <span id="aviso-fechas-invalidas"
+                      class="hidden items-center gap-1.5 px-3 py-1.5 rounded-full bg-red-500/15 border border-red-400/30 text-[11px] font-semibold text-red-200 shrink-0">
+                    <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"></path>
+                    </svg>
+                    Hay fechas de envío inválidas (vencidas o sin correos "Para"): corrígelas para poder guardar
+                </span>
+                <span id="indicador-cambios-sin-guardar"
+                      class="hidden items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/15 border border-amber-400/30 text-[11px] font-semibold text-amber-200 shrink-0">
+                    <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse shrink-0"></span>
+                    Cambios sin guardar
+                </span>
+            </div>
+        </div>
+    </header>
+
+    <!-- ══════════════ CONTENIDO PRINCIPAL ══════════════ -->
+    <main class="flex-1 min-h-0 px-4 md:px-6 py-4 flex flex-col overflow-hidden">
+
+        <!-- FORMULARIO PRINCIPAL -->
+        <form method="POST" action="{% url 'guardar_notificaciones_unidad' ccpp.id_ccpp unidad.id_unidad %}" id="form-notificaciones" class="flex-1 min-h-0 flex flex-col">
+            {% csrf_token %}
+            <input type="hidden" id="zona_horaria" name="zona_horaria" value="UTC">
+            <input type="hidden" id="omitir_enviadas" name="omitir_enviadas" value="0">
+            <input type="hidden" id="correos_seleccionados" name="correos_seleccionados" value="">
+
+            <!-- ── BARRA DE ACCIONES (arriba de la tabla) ── -->
+            <div class="flex flex-col gap-3 shrink-0 border-b border-slate-100 pb-4">
+                <!-- 1. Ruta de Navegación (Breadcrumbs) -->
+                <nav class="flex items-center gap-2 text-[11px] font-medium text-slate-400">
+                    <a href="{% url 'panel_principal' %}" class="hover:text-slate-700 transition-colors">Inicio</a>
+                    <span class="text-slate-300">/</span>
+                    <a href="{% url 'gestion_ccpp' ccpp.id_ccpp %}" class="hover:text-slate-700 transition-colors">Cronograma</a>
+                    <span class="text-slate-300">/</span>
+                    <span class="text-slate-600 font-semibold">Programación por unidad</span>
+                </nav>
+
+                <!-- 2. Cabecera Principal: Título + Contador (Izquierda) | Botones (Derecha) -->
+                <div class="flex items-center justify-between gap-4 flex-wrap">
+
+                    <!-- Titular + Contador Strategically Placed -->
+                    <div class="flex items-center gap-3">
+                        <h2 class="text-base md:text-lg font-bold text-slate-900 tracking-tight">
+                            Programación por unidad
+                        </h2>
+
+                        <!-- Contador minimalista tipo Badge -->
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-slate-100 border border-slate-200/60 text-[11px] font-semibold text-slate-600">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                            {{ inspecciones|length }} inspección(es)
+                        </span>
+                    </div>
+
+                    <!-- 3. Botones de Acción -->
+                    <div class="flex items-center justify-end gap-4 flex-wrap">
+
+                        <!-- Fecha común: siempre visible, junto al resto de opciones -->
+                        <div class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-50 border border-slate-200 shrink-0">
+                            <svg class="w-3.5 h-3.5 text-indigo-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                            </svg>
+                            <input type="datetime-local" id="fecha-envio-global"
+                                   title="El año se ajusta automáticamente al de cada registro"
+                                   class="text-[10px] px-2 py-1 rounded-md border border-slate-300 bg-white outline-none focus:ring-1 focus:ring-indigo-300 w-[145px]">
+                            <button type="button"
+                                    onclick="aplicarFechaComun()"
+                                    class="inline-flex items-center gap-1.5 text-[11px] md:text-xs font-semibold text-slate-600 hover:text-slate-900 hover:underline transicion-suave shrink-0">
+                                Aplicar para todos
+                            </button>
+                        </div>
+
+                        <!-- Botón de Guardar en negro -->
+                        <button type="submit"
+                                id="btn-guardar-notificaciones"
+                                class="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-slate-900 hover:bg-black text-[11px] md:text-xs font-semibold text-white transicion-suave shadow-sm active:scale-95 shrink-0 order-first sm:order-last disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-slate-900">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            Guardar
+                        </button>
+
+                        <!-- Botones en formato enlace con color gris oscuro -->
+                        <button type="button"
+                                onclick="mcuAbrirModal()"
+                                class="inline-flex items-center gap-1.5 text-[11px] md:text-xs font-semibold text-slate-600 hover:text-slate-900 hover:underline transicion-suave shrink-0">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                            </svg>
+                            Cronograma
+                        </button>
+
+                        <button type="button"
+                                onclick="abrirModalCorreosGlobal()"
+                                class="inline-flex items-center gap-1.5 text-[11px] md:text-xs font-semibold text-slate-600 hover:text-slate-900 hover:underline transicion-suave shrink-0">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                            </svg>
+                            Asignar Correos
+                        </button>
+
+                        <button type="button"
+                                data-modal-ficha-trigger
+                                data-id-ccpp="{{ ccpp.id_ccpp }}"
+                                data-id-unidad="{{ unidad.id_unidad }}"
+                                class="inline-flex items-center gap-1.5 text-[11px] md:text-xs font-semibold text-slate-600 hover:text-slate-900 hover:underline transicion-suave shrink-0">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                            </svg>
+                            {% if ficha_asignada %}Cambiar Ficha{% else %}Asignar Ficha{% endif %}
+                        </button>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── TABLA (con scroll propio) ── -->
+            <div class="bg-white rounded-xl border border-slate-200/60 shadow-soft flex-1 min-h-0 flex flex-col overflow-hidden">
+                <div class="overflow-auto flex-1 min-h-0">
+
+                    <table class="w-full text-left border-collapse min-w-[900px]">
+                        <!-- THEAD -->
+                        <thead class="bg-slate-50 border-b border-slate-200 sticky top-0 z-10">
+                            <tr class="text-[11px] font-semibold text-slate-400">
+                                <th class="py-3 px-2 w-20">Año</th>
+                                <th class="py-3 px-2">Mes</th>
+                                <th class="py-3 px-2">Código</th>
+                                <th class="py-3 px-2 min-w-[250px]">Correos</th>
+                                {% if ficha_asignada %}
+                                    <th class="py-3 px-2 min-w-[180px]">Control</th>
+                                {% endif %}
+                                <th class="py-3 px-2 min-w-[210px]">Envío Auto</th>
+                                <th class="py-3 px-2 text-center">Estado</th>
+                                <th class="py-3 pr-4 pl-2 text-right">Acción</th>
+                            </tr>
+                        </thead>
+
+                        <tbody class="divide-y-2 divide-slate-100">
+
+                            {% regroup inspecciones by anio_real as anios %}
+                            {% for grupo in anios %}
+                                {% for item in grupo.list %}
+                                    <tr class="hover:bg-slate-50/80 transition-colors duration-200"
+                                        data-key="{{ item.key }}"
+                                        data-inspeccion-id="{{ item.inspeccion_id }}"
+                                        data-anio="{{ item.anio_real }}"
+                                        data-mes="{{ item.mes }}"
+                                        data-codigo="{{ item.codigo_inspeccion }}"
+                                        data-notificado="{% if item.envio_ejecutado %}1{% else %}0{% endif %}"
+                                        data-respuesta="{% if item.tiene_respuesta %}1{% else %}0{% endif %}"
+                                        id="fila-{{ item.key }}">
+
+                                        <!-- Año centrado — Punto 1: línea más pronunciada al
+                                             iniciar un nuevo año (se omite en el primer grupo,
+                                             que ya está justo bajo el thead). -->
+                                        {% if forloop.first %}
+                                            <td class="py-3 px-2 text-center align-middle border-r border-slate-100 {% if not forloop.parentloop.first %}border-t-2 border-slate-300{% endif %}"
+                                                rowspan="{{ grupo.list|length }}">
+                                                <span class="font-bold text-xs md:text-[13px] text-slate-800">{{ grupo.grouper }}</span>
+                                            </td>
+                                        {% endif %}
+
+                                        <!-- Mes -->
+                                        <td class="py-3 px-2 text-[11px] md:text-xs text-slate-500 font-medium capitalize {% if forloop.first and not forloop.parentloop.first %}border-t-2 border-slate-300{% endif %}">{{ item.mes }}</td>
+
+                                        <!-- Código -->
+                                        <td class="py-3 px-2 {% if forloop.first and not forloop.parentloop.first %}border-t-2 border-slate-300{% endif %}">
+                                            <span class="font-bold text-xs md:text-[13px]" style="color: {{ item.color_inspeccion }};">
+                                                {{ item.codigo_inspeccion }}
+                                            </span>
+                                            <!-- Se envía siempre, exista o no ficha asignada: es la
+                                                 única forma confiable de que el backend sepa qué
+                                                 registros procesar para guardar/eliminar correos. -->
+                                            <input type="hidden" name="filas" value="{{ item.key }}">
+                                        </td>
+
+                                        <!-- Correos -->
+                                        <td data-celda="correos"
+                                            class="py-3 px-2 cursor-pointer hover:bg-indigo-50/30 transition-colors {% if forloop.first and not forloop.parentloop.first %}border-t-2 border-slate-300{% endif %}"
+                                            onclick="abrirModalCorreos('{{ item.key }}')">
+                                            <div class="flex flex-col gap-1">
+                                                {% if item.para_list %}
+                                                    <div class="flex items-start gap-1.5">
+                                                        <span class="text-[9px] font-bold text-indigo-600 uppercase mt-0.5 shrink-0">Para:</span>
+                                                        <div class="flex flex-col gap-0.5">
+                                                            {% for correo in item.para_list %}
+                                                                <span class="text-[10px] text-slate-700 leading-tight">{{ correo }}</span>
+                                                            {% endfor %}
+                                                        </div>
+                                                    </div>
+                                                {% endif %}
+                                                {% if item.cc_list %}
+                                                    <div class="flex items-start gap-1.5">
+                                                        <span class="text-[9px] font-bold text-slate-500 uppercase mt-0.5 shrink-0">CC:</span>
+                                                        <div class="flex flex-col gap-0.5">
+                                                            {% for correo in item.cc_list %}
+                                                                <span class="text-[10px] text-slate-600 leading-tight">{{ correo }}</span>
+                                                            {% endfor %}
+                                                        </div>
+                                                    </div>
+                                                {% endif %}
+                                                {% if item.cco_list %}
+                                                    <div class="flex items-start gap-1.5">
+                                                        <span class="text-[9px] font-bold text-slate-400 uppercase mt-0.5 shrink-0">CCO:</span>
+                                                        <div class="flex flex-col gap-0.5">
+                                                            {% for correo in item.cco_list %}
+                                                                <span class="text-[10px] text-slate-500 leading-tight">{{ correo }}</span>
+                                                            {% endfor %}
+                                                        </div>
+                                                    </div>
+                                                {% endif %}
+                                                {% if not item.para_list and not item.cc_list and not item.cco_list %}
+                                                    <span class="text-[10px] text-slate-400 italic">Click para configurar</span>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+
+                                        <!-- Control -->
+                                        {% if ficha_asignada %}
+                                            <td data-celda="control" class="py-3 px-2 {% if forloop.first and not forloop.parentloop.first %}border-t-2 border-slate-300{% endif %}">
+                                                <select name="control_{{ item.key }}"
+                                                        id="control_{{ item.key }}"
+                                                        class="text-[10px] px-2 py-1.5 rounded-lg border border-slate-200 bg-slate-50/50 outline-none focus:ring-1 focus:ring-indigo-200 max-w-[180px] cursor-pointer">
+                                                    <option value="">— Seleccionar —</option>
+                                                    {% for control in controles_disponibles %}
+                                                        <option value="{{ control.pk }}"
+                                                                {% if item.id_ficha_control == control.pk %}selected{% endif %}>
+                                                            {{ control.codigo_control }} - {{ control.periodo }}
+                                                        </option>
+                                                    {% endfor %}
+                                                </select>
+                                            </td>
+                                        {% endif %}
+
+                                        <!-- Envío automático -->
+                                        <td data-celda="envio" class="py-3 px-2 {% if forloop.first and not forloop.parentloop.first %}border-t-2 border-slate-300{% endif %}">
+                                            <input type="datetime-local"
+                                                   name="fecha_envio_{{ item.key }}"
+                                                   id="fecha_envio_{{ item.key }}"
+                                                   value="{% if item.fecha_envio_programado and not item.envio_ejecutado %}{{ item.fecha_envio_programado|date:'Y-m-d\TH:i' }}{% endif %}"
+                                                   class="text-[10px] px-2 py-1.5 rounded-lg border border-slate-200 bg-slate-50/50 outline-none focus:ring-1 focus:ring-indigo-200 w-[150px]">
+                                        </td>
+
+                                        <!-- Estado -->
+                                        <td class="py-3 px-2 text-center {% if forloop.first and not forloop.parentloop.first %}border-t-2 border-slate-300{% endif %}">
+                                            {% if item.tiene_respuesta %}
+                                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-fuchsia-50 text-[10px] font-bold text-fuchsia-600 whitespace-nowrap">
+                                                    <span class="w-1.5 h-1.5 rounded-full bg-fuchsia-500 shrink-0"></span>
+                                                    Con respuesta
+                                                </span>
+                                            {% elif item.envio_ejecutado %}
+                                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-50 text-[10px] font-bold text-green-600 whitespace-nowrap">
+                                                    <span class="w-1.5 h-1.5 rounded-full bg-green-500 shrink-0"></span>
+                                                    Notificado
+                                                </span>
+                                            {% elif item.notificacion_existe %}
+                                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-orange-50 text-[10px] font-bold text-orange-600 whitespace-nowrap">
+                                                    <span class="w-1.5 h-1.5 rounded-full bg-orange-500 shrink-0"></span>
+                                                    En espera
+                                                </span>
+                                            {% else %}
+                                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-50 text-[10px] font-bold text-slate-400 whitespace-nowrap">
+                                                    <span class="w-1.5 h-1.5 rounded-full bg-slate-300 shrink-0"></span>
+                                                    Sin enviar
+                                                </span>
+                                            {% endif %}
+                                        </td>
+
+                                        <!-- Acciones -->
+                                        <td class="py-3 pr-4 pl-2 text-right {% if forloop.first and not forloop.parentloop.first %}border-t-2 border-slate-300{% endif %}">
+                                            <div class="flex items-center justify-end gap-2">
+
+                                                <!-- Botón 1: Configurar correos -->
+                                                <button type="button"
+                                                        onclick="abrirModalCorreos('{{ item.key }}')"
+                                                        class="p-1.5 rounded-lg text-slate-400 hover:text-slate-900 hover:bg-slate-100 transition-colors duration-150"
+                                                        title="Configurar correos">
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                                    </svg>
+                                                </button>
+
+                                                <!-- Botón 2: Enviar correo manual -->
+                                                {% if item.inspeccion_id %}
+                                                    <button type="button"
+                                                            onclick="enviarCorreoManual('{{ ccpp.id_ccpp }}', '{{ unidad.id_unidad }}', '{{ item.inspeccion_id }}', {% if item.notificacion_id %}'{{ item.notificacion_id }}'{% else %}null{% endif %}, '{{ item.key }}')"
+                                                            class="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-slate-100 transition-colors duration-150"
+                                                            title="Enviar correo manual">
+                                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                                                        </svg>
+                                                    </button>
+                                                {% endif %}
+
+                                                <!-- Botón 3: Ver ficha -->
+                                                {% if ficha_asignada %}
+                                                    <button type="button"
+                                                            onclick="verFicha('{{ ccpp.id_ccpp }}', '{{ ficha_asignada.id }}', '{{ item.key }}')"
+                                                            class="p-1.5 rounded-lg text-slate-400 hover:text-slate-900 hover:bg-slate-100 transition-colors duration-150"
+                                                            title="Ver ficha">
+                                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                                                        </svg>
+                                                    </button>
+                                                {% endif %}
+
+                                                <!-- Botón 4: Eliminar notificación -->
+                                                {% if item.notificacion_id %}
+                                                    <button type="button"
+                                                            onclick="confirmarEliminacion({{ item.notificacion_id }})"
+                                                            class="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors duration-150"
+                                                            title="Eliminar notificación">
+                                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                                        </svg>
+                                                    </button>
+                                                {% endif %}
+
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            {% empty %}
+                                <tr>
+                                    <td colspan="10" class="py-16 text-center">
+                                        <p class="text-sm font-semibold text-slate-500">Sin inspecciones programadas</p>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </form>
+    </main>
+
+    {% include "includes/modal_redactar_correo.html" %}
+    {% include "includes/modal_SeleccionarUnidad.html" %}
+    {% include "includes/modal_cronograma_unidad.html" %}
+
+    <!-- Checkboxes ocultos usados exclusivamente para reutilizar el modal
+         "redactar_correo.html" sin modificarlo: ese modal lee los correos
+         desde inputs name="para"/"cc"/"cco" marcados. Aquí los sincronizamos
+         dinámicamente con los correos del registro antes de abrirlo. -->
+    <div id="correos-temporales-envio" class="hidden"></div>
+
+    <!-- MODAL DE CONFIGURACIÓN DE CORREOS -->
+    <div id="modal-correos" class="fixed inset-0 z-[9999] hidden items-center justify-center bg-black/50 backdrop-blur-sm px-4 opacity-0 transition-opacity duration-300 ease-out">
+        <div id="modal-correos-panel" class="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden transform transition-all duration-300 ease-out scale-95 opacity-0">
+            <div class="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-slate-50 to-slate-100/50 border-b border-slate-200">
+                <div>
+                    <h3 class="text-sm font-bold text-slate-800">Configurar Correos</h3>
+                    <p id="modal-correos-info" class="text-[11px] text-slate-500 mt-0.5"></p>
+                </div>
+                <button type="button" onclick="cerrarModalCorreos()"
+                        class="w-8 h-8 flex items-center justify-center rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="px-6 py-5">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 max-h-[50vh] overflow-y-auto scrollbar-none">
+                    <!-- Sección Para -->
+                    <div>
+                        <div class="flex items-center gap-2 pb-3 mb-4 border-b-2 border-indigo-100">
+                            <span class="w-2.5 h-2.5 rounded-full bg-indigo-600 ring-2 ring-indigo-100"></span>
+                            <label class="text-xs font-bold text-slate-700 uppercase tracking-wider">Para</label>
+                        </div>
+                        <div class="space-y-1.5">
+                            {% for correo in correos_para %}
+                                <label class="flex items-center gap-3 p-2 rounded-xl hover:bg-indigo-50/50 cursor-pointer transition-colors group">
+                                    <input type="checkbox" name="modal_para" value="{{ correo }}"
+                                           class="check-correo-para w-4 h-4 text-indigo-600 border-slate-300 rounded cursor-pointer focus:ring-0">
+                                    <span class="text-[11px] text-slate-600 group-hover:text-indigo-700 font-medium break-all leading-snug">{{ correo }}</span>
+                                </label>
+                            {% empty %}
+                                <p class="text-xs text-slate-400 italic py-2">No hay correos disponibles</p>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- Sección CC -->
+                    <div>
+                        <div class="flex items-center gap-2 pb-3 mb-4 border-b-2 border-slate-100">
+                            <span class="w-2.5 h-2.5 rounded-full bg-slate-400 ring-2 ring-slate-100"></span>
+                            <label class="text-xs font-bold text-slate-700 uppercase tracking-wider">CC</label>
+                        </div>
+                        <div class="space-y-1.5">
+                            {% for correo in correos_cc %}
+                                <label class="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 cursor-pointer transition-colors group">
+                                    <input type="checkbox" name="modal_cc" value="{{ correo }}"
+                                           class="check-correo-cc w-4 h-4 text-indigo-600 border-slate-300 rounded cursor-pointer focus:ring-0">
+                                    <span class="text-[11px] text-slate-600 group-hover:text-slate-800 font-medium break-all leading-snug">{{ correo }}</span>
+                                </label>
+                            {% empty %}
+                                <p class="text-xs text-slate-400 italic py-2">No hay correos disponibles</p>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- Sección CCO -->
+                    <div>
+                        <div class="flex items-center gap-2 pb-3 mb-4 border-b-2 border-slate-100">
+                            <span class="w-2.5 h-2.5 rounded-full bg-slate-300 ring-2 ring-slate-100"></span>
+                            <label class="text-xs font-bold text-slate-700 uppercase tracking-wider">CCO</label>
+                        </div>
+                        <div class="space-y-1.5">
+                            {% for correo in correos_cco %}
+                                <label class="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 cursor-pointer transition-colors group">
+                                    <input type="checkbox" name="modal_cco" value="{{ correo }}"
+                                           class="check-correo-cco w-4 h-4 text-indigo-600 border-slate-300 rounded cursor-pointer focus:ring-0">
+                                    <span class="text-[11px] text-slate-600 group-hover:text-slate-800 font-medium break-all leading-snug">{{ correo }}</span>
+                                </label>
+                            {% empty %}
+                                <p class="text-xs text-slate-400 italic py-2">No hay correos disponibles</p>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FOOTER MODIFICADO -->
+            <div class="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-slate-50 to-slate-100/50 border-t border-slate-200">
+
+                <!-- Lado Izquierdo: Aplicar a todos (Secundario/Poco énfasis) -->
+                <button type="button" onclick="aplicarCorreosTodos()"
+                        class="text-xs font-semibold text-indigo-600 hover:text-indigo-800 hover:underline transition-all cursor-pointer bg-transparent border-none p-0">
+                    Aplicar a toda la unidad
+                </button>
+
+                <!-- Lado Derecho: Cancelar (en medio) + Aplicar (Principal) -->
+                <div class="flex items-center gap-3">
+                    <button type="button" onclick="cerrarModalCorreos()"
+                            class="px-4 py-2 text-xs font-semibold text-slate-500 hover:text-slate-700 hover:bg-slate-200 rounded-xl transition-all">
+                        Cancelar
+                    </button>
+                    <button type="button" id="btn-aplicar-registro" onclick="aplicarCorreosRegistro()"
+                            class="px-5 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition-all shadow-lg shadow-indigo-600/20 uppercase tracking-wider disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-indigo-600">
+                        Aplicar
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // ═══════════════════════════════════════════════════════════════════
+    // 1. ESTADO DE CAMBIOS SIN GUARDAR
+    // ═══════════════════════════════════════════════════════════════════
+
+    window.huboCambiosSinGuardar = false;
+    window.envioEnProgreso = false;
+
+    function marcarCambiosSinGuardar() {
+        window.huboCambiosSinGuardar = true;
+        const indicador = document.getElementById('indicador-cambios-sin-guardar');
+        if (indicador) {
+            indicador.classList.remove('hidden');
+            indicador.classList.add('inline-flex');
+        }
+    }
+
+    window.addEventListener('beforeunload', function (e) {
+        if (window.huboCambiosSinGuardar && !window.envioEnProgreso) {
+            e.preventDefault();
+            e.returnValue = '';
+        }
+    });
+
+    function confirmarNavegacion(evento, elemento) {
+        if (!window.huboCambiosSinGuardar) return true;
+        evento.preventDefault();
+        const destino = elemento.getAttribute('href');
+
+        swalConfirmarAccion({
+            titulo: 'Cambios sin guardar',
+            texto: 'Tienes cambios sin guardar. Si sales ahora se perderán. ¿Deseas continuar?',
+            confirmButtonText: 'Salir sin guardar',
+            cancelButtonText: 'Quedarme',
+            width: '380px',
+        }).then((result) => {
+            if (result.isConfirmed) {
+                window.envioEnProgreso = true;
+                window.location.href = destino;
+            }
+        });
+
+        return false;
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // 2. ESTILOS Y HELPERS COMPARTIDOS DE SWEETALERT2
+    //    Todos los mensajes de la página usan esta misma línea visual:
+    //    popups cuadrados, sin redondeo excesivo, botones propios (sin el
+    //    estilo por defecto de SweetAlert2) y tipografía consistente con
+    //    el resto del sistema.
+    // ═══════════════════════════════════════════════════════════════════
+
+    const SWAL_CLASES_BASE = {
+        popup: 'rounded-sm border border-gray-200 shadow-xl',
+        title: 'text-sm font-bold text-gray-800 pt-4',
+        htmlContainer: 'text-xs text-gray-600',
+    };
+
+    const SWAL_BOTON_BASE      = 'text-white text-[10px] font-bold py-2 px-4 rounded-sm mx-1';
+    const SWAL_BOTON_CANCELAR  = `bg-slate-600 hover:bg-slate-700 ${SWAL_BOTON_BASE} order-1 ring-2 ring-slate-300 ring-offset-2`;
+
+    /**
+     * Combina las opciones base (compartidas por todos los mensajes) con
+     * las particulares de cada llamada, fusionando "customClass" en vez
+     * de sobrescribirlo por completo.
+     */
+    function construirOpcionesSwal(opciones) {
+        return {
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            reverseButtons: true,
+            focusCancel: true,
+            buttonsStyling: false,
+            ...opciones,
+            customClass: {
+                ...SWAL_CLASES_BASE,
+                ...(opciones.customClass || {}),
+            },
+        };
+    }
+
+    /** Confirmación destructiva (ej. eliminar). Botón de confirmar en rojo. */
+    function swalConfirmarPeligro({ titulo, texto, html, confirmButtonText = 'Sí, Eliminar', cancelButtonText = 'No, Cancelar', width = '300px' }) {
+        return Swal.fire(construirOpcionesSwal({
+            title: titulo,
+            text: texto,
+            html,
+            icon: 'question',
+            width,
+            showCancelButton: true,
+            confirmButtonText,
+            cancelButtonText,
+            customClass: {
+                confirmButton: `bg-red-700 hover:bg-red-800 ${SWAL_BOTON_BASE} order-2`,
+                cancelButton: SWAL_BOTON_CANCELAR,
+            },
+        }));
+    }
+
+    /** Confirmación estándar (acciones reversibles o informativas). */
+    function swalConfirmarAccion({ titulo, texto, html, icon = 'warning', width = '380px', confirmButtonText = 'Sí, continuar', cancelButtonText = 'Cancelar' }) {
+        return Swal.fire(construirOpcionesSwal({
+            title: titulo,
+            text: texto,
+            html,
+            icon,
+            width,
+            showCancelButton: true,
+            confirmButtonText,
+            cancelButtonText,
+            customClass: {
+                confirmButton: `bg-indigo-600 hover:bg-indigo-700 ${SWAL_BOTON_BASE} order-2`,
+                cancelButton: SWAL_BOTON_CANCELAR,
+            },
+        }));
+    }
+
+    /** Pregunta con tres caminos posibles (confirmar / denegar / cancelar). */
+    function swalPreguntaTresVias({ titulo, texto, confirmButtonText, denyButtonText, cancelButtonText, width = '350px' }) {
+        return Swal.fire(construirOpcionesSwal({
+            title: titulo,
+            text: texto,
+            icon: 'question',
+            width,
+            showDenyButton: true,
+            showCancelButton: true,
+            confirmButtonText,
+            denyButtonText,
+            cancelButtonText,
+            customClass: {
+                confirmButton: `bg-indigo-600 hover:bg-indigo-700 ${SWAL_BOTON_BASE} order-2`,
+                denyButton: `bg-amber-600 hover:bg-amber-700 ${SWAL_BOTON_BASE} order-3`,
+                cancelButton: SWAL_BOTON_CANCELAR,
+            },
+        }));
+    }
+
+    /** Aviso de éxito breve (auto-cierra, sin botones). */
+    function swalExito(titulo, texto = '', width = '300px') {
+        return Swal.fire(construirOpcionesSwal({
+            title: titulo,
+            text: texto,
+            icon: 'success',
+            width,
+            timer: 1200,
+            showConfirmButton: false,
+            allowOutsideClick: true,
+            allowEscapeKey: true,
+            customClass: {},
+        }));
+    }
+
+    /** Aviso puramente informativo, con un único botón "Entendido". */
+    function swalAviso(titulo, html, width = '380px') {
+        return Swal.fire(construirOpcionesSwal({
+            title: titulo,
+            html,
+            icon: 'info',
+            width,
+            allowOutsideClick: true,
+            allowEscapeKey: true,
+            showConfirmButton: true,
+            confirmButtonText: 'Entendido',
+            customClass: {
+                confirmButton: `bg-indigo-600 hover:bg-indigo-700 ${SWAL_BOTON_BASE} order-2`,
+            },
+        }));
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // 3. INICIALIZACIÓN Y GUARDADO DEL FORMULARIO
+    // ═══════════════════════════════════════════════════════════════════
+
+    document.addEventListener('DOMContentLoaded', function () {
+        // ahora
+        const zonaHoraria = document.getElementById('zona_horaria_global').value;
+        document.getElementById('zona_horaria').value = zonaHoraria;
+
+        // Estado global de correos por registro
+        window.correosPorRegistro = {};
+
+        // Inicializar con los datos ya guardados en cada registro.
+        //
+        // IMPORTANTE: los correos se guardan en BD como "correo1, correo2"
+        // (separados por coma + espacio). Si solo se separa por "," sin
+        // recortar espacios, el segundo correo en adelante queda como
+        // " correo2" y nunca calza con el value de los checkboxes del
+        // modal, por lo que aparecían sin marcar al reabrirlo. Se corrige
+        // recortando (trim) cada correo tras el split.
+        {% for insp in inspecciones %}
+            window.correosPorRegistro['{{ insp.key }}'] = {
+                para: '{{ insp.para|escapejs }}'.split(',').map(c => c.trim()).filter(c => c),
+                cc: '{{ insp.cc|escapejs }}'.split(',').map(c => c.trim()).filter(c => c),
+                cco: '{{ insp.cco|escapejs }}'.split(',').map(c => c.trim()).filter(c => c),
+            };
+        {% endfor %}
+
+        // Marcar cambios sin guardar al tocar control o fecha de envío
+        document.querySelectorAll('select[id^="control_"]').forEach(el => {
+            el.addEventListener('change', marcarCambiosSinGuardar);
+        });
+        document.querySelectorAll('input[id^="fecha_envio_"]').forEach(el => {
+            el.addEventListener('change', function () {
+                marcarCambiosSinGuardar();
+                validarCoherenciaFechas();
+            });
+        });
+
+        document.getElementById('form-notificaciones').addEventListener('submit', manejarEnvioFormulario);
+
+        // Precarga el input de "fecha común" con una referencia de algún
+        // registro ya programado (solo como comodidad; no aplica nada).
+        precargarFechaComunInicial();
+
+        // Verifica el estado inicial por si algún registro ya guardado
+        // trae, por cualquier motivo, una fecha de envío pasada.
+        validarCoherenciaFechas();
+    });
+
+    /** Vuelca window.correosPorRegistro al input oculto que viaja en el POST. */
+    function serializarCorreosSeleccionados() {
+        const correosData = {};
+        Object.keys(window.correosPorRegistro).forEach(key => {
+            correosData[key] = {
+                para: window.correosPorRegistro[key].para.join(','),
+                cc: window.correosPorRegistro[key].cc.join(','),
+                cco: window.correosPorRegistro[key].cco.join(','),
+            };
+        });
+        document.getElementById('correos_seleccionados').value = JSON.stringify(correosData);
+    }
+
+    /**
+     * Punto de entrada al enviar el formulario.
+     *
+     * Ambas condiciones que antes se manejaban como advertencias
+     * "ignorables" (fecha vencida y fecha sin correos "Para") ahora son
+     * bloqueantes: se validan en tiempo real mediante
+     * validarCoherenciaFechas(), que además deshabilita el botón
+     * "Guardar" mientras exista algún registro inválido. Aquí se repite
+     * la validación como barrera defensiva antes de armar el POST.
+     */
+    function manejarEnvioFormulario(e) {
+        e.preventDefault();
+
+        if (validarCoherenciaFechas()) {
+            swalAviso(
+                'Hay registros con fecha inválida',
+                '<p class="text-xs text-slate-600 text-left">Uno o más registros tienen una fecha de envío programada sin correos "Para" configurados, o con una fecha que ya pasó. Corrige o limpia esos registros antes de guardar.</p>'
+            );
+            return;
+        }
+
+        serializarCorreosSeleccionados();
+
+        continuarGuardado();
+    }
+
+    /** Una vez validado el formulario, resuelve qué hacer con las notificaciones ya enviadas. */
+    function continuarGuardado() {
+        const hayEnviadas = {{ hay_envios_ejecutados|yesno:"true,false" }};
+
+        if (!hayEnviadas) {
+            enviarFormulario();
+            return;
+        }
+
+        swalPreguntaTresVias({
+            titulo: 'Hay notificaciones ya enviadas',
+            texto: '¿Deseas omitir las notificaciones que ya fueron enviadas?',
+            confirmButtonText: 'Omitir enviadas',
+            denyButtonText: 'Modificar todas',
+            cancelButtonText: 'Cancelar',
+        }).then((result) => {
+            if (result.isConfirmed) {
+                document.getElementById('omitir_enviadas').value = '1';
+                enviarFormulario();
+            } else if (result.isDenied) {
+                document.getElementById('omitir_enviadas').value = '0';
+                enviarFormulario();
+            }
+        });
+    }
+
+    function enviarFormulario() {
+        window.envioEnProgreso = true;
+        document.getElementById('form-notificaciones').submit();
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // 4. CONFIRMACIÓN AL CAMBIAR FICHA
+    // ═══════════════════════════════════════════════════════════════════
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const hayControlesAsignados = {{ hay_controles_asignados|yesno:"true,false" }};
+        const botonFicha = document.querySelector('[data-modal-ficha-trigger]');
+
+        if (!botonFicha) return;
+
+        // Listener en FASE DE CAPTURA: se ejecuta antes que el listener
+        // global que abre "modal_SeleccionarUnidad.html", sin necesidad
+        // de tocar ese componente compartido.
+        botonFicha.addEventListener('click', function (e) {
+            // Si ya se confirmó, se deja pasar el click real una sola vez.
+            if (botonFicha.dataset.confirmado === '1') {
+                botonFicha.dataset.confirmado = '0';
+                return;
+            }
+
+            if (!hayControlesAsignados) return; // nada que advertir
+
+            e.preventDefault();
+            e.stopImmediatePropagation();
+
+            swalConfirmarAccion({
+                titulo: 'Cambiar ficha',
+                html: '<p class="text-xs text-slate-600 text-left">Esta unidad tiene <b>controles configurados</b> en sus registros de notificación. Si continúas, esos controles se eliminarán antes de asignar la nueva ficha.</p>',
+                confirmButtonText: 'Sí, continuar',
+                cancelButtonText: 'Cancelar',
+                width: '420px',
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    botonFicha.dataset.confirmado = '1';
+                    botonFicha.click();
+                }
+            });
+        }, true);
+    });
+
+    // ═══════════════════════════════════════════════════════════════════
+    // 5. MODAL DE CORREOS
+    // ═══════════════════════════════════════════════════════════════════
+
+    function abrirModalCorreos(keyUnico) {
+        const modal = document.getElementById('modal-correos');
+        const panel = document.getElementById('modal-correos-panel');
+        const info = document.getElementById('modal-correos-info');
+        const btnRegistro = document.getElementById('btn-aplicar-registro');
+
+        info.textContent = `Configurando: ${keyUnico}`;
+
+        // Limpiar checkboxes
+        document.querySelectorAll('.check-correo-para, .check-correo-cc, .check-correo-cco').forEach(cb => {
+            cb.checked = false;
+        });
+
+        // Cargar correos del registro (ya vienen recortados/trim desde la
+        // inicialización, por lo que la comparación siempre calza).
+        const correosRef = window.correosPorRegistro[keyUnico] || { para: [], cc: [], cco: [] };
+
+        document.querySelectorAll('.check-correo-para').forEach(cb => {
+            if (correosRef.para.includes(cb.value)) cb.checked = true;
+        });
+        document.querySelectorAll('.check-correo-cc').forEach(cb => {
+            if (correosRef.cc.includes(cb.value)) cb.checked = true;
+        });
+        document.querySelectorAll('.check-correo-cco').forEach(cb => {
+            if (correosRef.cco.includes(cb.value)) cb.checked = true;
+        });
+
+        modal.dataset.key = keyUnico;
+        modal.dataset.modo = 'registro';
+
+        // Modo registro: ambas opciones de aplicación están disponibles
+        btnRegistro.disabled = false;
+        btnRegistro.classList.remove('opacity-40', 'cursor-not-allowed');
+
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                modal.classList.remove('opacity-0');
+                panel.classList.remove('scale-95', 'opacity-0');
+                panel.classList.add('scale-100', 'opacity-100');
+            });
+        });
+    }
+
+    function abrirModalCorreosGlobal() {
+        const modal = document.getElementById('modal-correos');
+        const panel = document.getElementById('modal-correos-panel');
+        const info = document.getElementById('modal-correos-info');
+        const btnRegistro = document.getElementById('btn-aplicar-registro');
+
+        info.textContent = 'Asignar correos a todos los registros de la unidad';
+
+        // Se parte de una selección vacía: no hay un registro de referencia
+        // del cual tomar los correos actuales.
+        document.querySelectorAll('.check-correo-para, .check-correo-cc, .check-correo-cco').forEach(cb => {
+            cb.checked = false;
+        });
+
+        modal.dataset.key = '';
+        modal.dataset.modo = 'global';
+
+        // Modo global: solo se permite aplicar a todos los registros
+        btnRegistro.disabled = true;
+        btnRegistro.classList.add('opacity-40', 'cursor-not-allowed');
+
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                modal.classList.remove('opacity-0');
+                panel.classList.remove('scale-95', 'opacity-0');
+                panel.classList.add('scale-100', 'opacity-100');
+            });
+        });
+    }
+
+    function cerrarModalCorreos() {
+        const modal = document.getElementById('modal-correos');
+        const panel = document.getElementById('modal-correos-panel');
+
+        modal.classList.add('opacity-0');
+        panel.classList.remove('scale-100', 'opacity-100');
+        panel.classList.add('scale-95', 'opacity-0');
+
+        setTimeout(() => {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }, 250);
+    }
+
+    function tieneEnvioActivo(key) {
+        const input = document.getElementById(`fecha_envio_${key}`);
+        return !!(input && input.value);
+    }
+
+    function limpiarProgramacion(key) {
+        const input = document.getElementById(`fecha_envio_${key}`);
+        if (input) input.value = '';
+    }
+
+    // Se busca la celda de correos por atributo, nunca por posición
+    // (la posición cambia según si la fila tiene o no la celda de Año
+    // por el rowspan del agrupamiento por año).
+    function obtenerCeldaCorreos(fila) {
+        return fila ? fila.querySelector('[data-celda="correos"]') : null;
+    }
+
+    function leerSeleccionCorreos() {
+        return {
+            para: Array.from(document.querySelectorAll('.check-correo-para:checked')).map(cb => cb.value),
+            cc: Array.from(document.querySelectorAll('.check-correo-cc:checked')).map(cb => cb.value),
+            cco: Array.from(document.querySelectorAll('.check-correo-cco:checked')).map(cb => cb.value),
+        };
+    }
+
+    // ── Aplicar solo al registro que abrió el modal ──
+    async function aplicarCorreosRegistro() {
+        const modal = document.getElementById('modal-correos');
+        const key = modal.dataset.key;
+        if (!key) return; // seguridad: no debería poder invocarse sin key (botón deshabilitado en modo global)
+
+        const { para: paraSeleccionados, cc: ccSeleccionados, cco: ccoSeleccionados } = leerSeleccionCorreos();
+        const paraVacio = paraSeleccionados.length === 0;
+
+        const filaActual = document.getElementById(`fila-${key}`);
+        const registroNotificado = filaActual && filaActual.dataset.notificado === '1';
+        const registroConRespuesta = filaActual && filaActual.dataset.respuesta === '1';
+        const registroTieneEnvio = tieneEnvioActivo(key);
+
+        if (registroNotificado || registroConRespuesta) {
+            const result = await swalConfirmarAccion({
+                titulo: 'Registro ya notificado',
+                html: `<p class="text-xs text-slate-600 text-left">Este registro ya fue notificado${registroConRespuesta ? ' y tiene respuesta registrada' : ''}. Modificar sus correos podría afectar el historial.</p>`,
+                confirmButtonText: 'Modificar de todos modos',
+                cancelButtonText: 'Cancelar',
+                width: '400px',
+            });
+            if (!result.isConfirmed) return;
+        }
+
+        if (paraVacio && registroTieneEnvio) {
+            const result = await swalConfirmarAccion({
+                titulo: '¿Eliminar programación de envío?',
+                texto: 'Este registro tiene un envío automático programado. Al quitar los correos "Para" se eliminará esa programación. ¿Deseas continuar?',
+                confirmButtonText: 'Sí, continuar',
+                cancelButtonText: 'Cancelar',
+                width: '400px',
+            });
+            if (!result.isConfirmed) return;
+            limpiarProgramacion(key);
+        }
+
+        window.correosPorRegistro[key] = {
+            para: paraSeleccionados,
+            cc: ccSeleccionados,
+            cco: ccoSeleccionados,
+        };
+        actualizarCeldaCorreos(key, paraSeleccionados, ccSeleccionados, ccoSeleccionados);
+        marcarCambiosSinGuardar();
+        validarCoherenciaFechas();
+
+        swalExito('Correos configurados', 'Se aplicaron al registro seleccionado.');
+
+        cerrarModalCorreos();
+    }
+
+    // ── Aplicar a todos los registros de la unidad ──
+    async function aplicarCorreosTodos() {
+        const { para: paraSeleccionados, cc: ccSeleccionados, cco: ccoSeleccionados } = leerSeleccionCorreos();
+        const paraVacio = paraSeleccionados.length === 0;
+        const keys = Object.keys(window.correosPorRegistro);
+
+        const registrosSensibles = keys.filter(k => {
+            const fila = document.getElementById(`fila-${k}`);
+            const programado = tieneEnvioActivo(k);
+            const notificado = fila && fila.dataset.notificado === '1';
+            const conRespuesta = fila && fila.dataset.respuesta === '1';
+            return programado || notificado || conRespuesta;
+        });
+
+        if (registrosSensibles.length > 0) {
+            const result = await swalConfirmarAccion({
+                titulo: '¿Aplicar a todos los registros?',
+                html: `<p class="text-xs text-slate-600 text-left">Hay <b>${registrosSensibles.length}</b> registro(s) con envío programado, ya notificados o con respuesta. Esta acción sobrescribirá sus correos configurados.</p>`,
+                confirmButtonText: 'Sí, aplicar a todos',
+                cancelButtonText: 'Cancelar',
+                width: '420px',
+            });
+            if (!result.isConfirmed) return;
+        }
+
+        keys.forEach(k => {
+            window.correosPorRegistro[k] = {
+                para: [...paraSeleccionados],
+                cc: [...ccSeleccionados],
+                cco: [...ccoSeleccionados],
+            };
+            actualizarCeldaCorreos(k, paraSeleccionados, ccSeleccionados, ccoSeleccionados);
+
+            // Si se dejaron los "Para" en blanco, se limpia la fecha de
+            // envío para que al guardar se cancele esa programación.
+            if (paraVacio && tieneEnvioActivo(k)) {
+                limpiarProgramacion(k);
+            }
+        });
+
+        marcarCambiosSinGuardar();
+        validarCoherenciaFechas();
+
+        swalExito('Correos configurados', 'Se aplicaron a todos los registros.');
+
+        cerrarModalCorreos();
+    }
+
+    function actualizarCeldaCorreos(key, paraSeleccionados, ccSeleccionados, ccoSeleccionados) {
+        const fila = document.getElementById(`fila-${key}`);
+        const celdaCorreos = obtenerCeldaCorreos(fila);
+        if (!celdaCorreos) return;
+
+        let html = '';
+        if (paraSeleccionados.length > 0) {
+            html += `<div class="flex items-start gap-1.5">
+                <span class="text-[9px] font-bold text-indigo-600 uppercase mt-0.5 shrink-0">Para:</span>
+                <div class="flex flex-col gap-0.5">${paraSeleccionados.map(c => `<span class="text-[10px] text-slate-700 leading-tight">${c}</span>`).join('')}</div>
+            </div>`;
+        }
+        if (ccSeleccionados.length > 0) {
+            html += `<div class="flex items-start gap-1.5">
+                <span class="text-[9px] font-bold text-slate-500 uppercase mt-0.5 shrink-0">CC:</span>
+                <div class="flex flex-col gap-0.5">${ccSeleccionados.map(c => `<span class="text-[10px] text-slate-600 leading-tight">${c}</span>`).join('')}</div>
+            </div>`;
+        }
+        if (ccoSeleccionados.length > 0) {
+            html += `<div class="flex items-start gap-1.5">
+                <span class="text-[9px] font-bold text-slate-400 uppercase mt-0.5 shrink-0">CCO:</span>
+                <div class="flex flex-col gap-0.5">${ccoSeleccionados.map(c => `<span class="text-[10px] text-slate-500 leading-tight">${c}</span>`).join('')}</div>
+            </div>`;
+        }
+        if (!paraSeleccionados.length && !ccSeleccionados.length && !ccoSeleccionados.length) {
+            html = '<span class="text-[10px] text-slate-400 italic">Click para configurar</span>';
+        }
+        celdaCorreos.innerHTML = html;
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // 6. ENVÍO MANUAL (modal redactar_correo.html)
+    // ═══════════════════════════════════════════════════════════════════
+
+    function prepararCorreosParaEnvioManual(key) {
+        const contenedor = document.getElementById('correos-temporales-envio');
+        contenedor.innerHTML = '';
+
+        const datos = window.correosPorRegistro[key] || { para: [], cc: [], cco: [] };
+
+        const crearCheckbox = (nombre, valor) => {
+            const input = document.createElement('input');
+            input.type = 'checkbox';
+            input.name = nombre;
+            input.value = valor;
+            input.checked = true;
+            contenedor.appendChild(input);
+        };
+
+        datos.para.forEach(c => crearCheckbox('para', c));
+        datos.cc.forEach(c => crearCheckbox('cc', c));
+        datos.cco.forEach(c => crearCheckbox('cco', c));
+    }
+
+    function enviarCorreoManual(ccppId, unidadId, inspeccionId, notificacionId, key) {
+        prepararCorreosParaEnvioManual(key);
+        const partes = key.split('_'); // ccpp_unidad_anio_mes
+        const anio = partes[2];
+        const mes = partes[3];
+        GestorCorreo.abrir(ccppId, unidadId, inspeccionId, notificacionId, anio, mes);
+    }
+
+    function verFicha(ccppId, fichaId, inspKey) {
+        const controlSelect = document.getElementById('control_' + inspKey);
+        let url = `/fichas/${fichaId}/pdf/${ccppId}/false/`;
+        if (controlSelect && controlSelect.value) {
+            url += `?control=${controlSelect.value}`;
+        }
+        window.open(url, '_blank');
+    }
+
+    async function confirmarEliminacion(notificacionId) {
+        const result = await swalConfirmarPeligro({
+            titulo: '¿Eliminar notificación?',
+            texto: 'Esta acción es definitiva y eliminará todos los documentos asociados.',
+        });
+
+        if (!result.isConfirmed) return;
+
+        try {
+            const response = await fetch(`/notificaciones/unidad/eliminar/${notificacionId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+            const data = await response.json();
+            if (data.success) {
+                window.envioEnProgreso = true;
+                location.reload();
+            }
+        } catch (error) {
+            console.error('Error:', error);
+        }
+    }
+
+    // Recargar al asignar ficha
+    document.addEventListener('fichaAsignada', function() {
+        window.envioEnProgreso = true;
+        setTimeout(() => location.reload(), 1500);
+    });
+
+    // ═══════════════════════════════════════════════════════════════════
+    // 7. FECHA DE ENVÍO COMÚN
+    // ═══════════════════════════════════════════════════════════════════
+
+    /** true si la fecha-hora (formato datetime-local) ya pasó respecto a ahora. */
+    function fechaEsPasada(fechaStr) {
+        if (!fechaStr) return false;
+        const fecha = new Date(fechaStr);
+        if (Number.isNaN(fecha.getTime())) return false;
+        return fecha.getTime() <= Date.now();
+    }
+
+    function obtenerPartesFecha(fecha) {
+        if (!fecha) {
+            return null;
+        }
+
+        const partes = fecha.split('T');
+
+        if (partes.length !== 2) {
+            return null;
+        }
+
+        const fechaPartes = partes[0].split('-');
+        const horaPartes = partes[1].split(':');
+
+        if (fechaPartes.length !== 3 || horaPartes.length < 2) {
+            return null;
+        }
+
+        return {
+            anio: fechaPartes[0],
+            mes: fechaPartes[1],
+            dia: fechaPartes[2],
+            hora: horaPartes[0],
+            minuto: horaPartes[1],
+        };
+    }
+
+    function construirFechaConAnio(anio, partesFecha) {
+        if (!partesFecha) {
+            return '';
+        }
+
+        return (
+            `${anio}-${partesFecha.mes}-${partesFecha.dia}` +
+            `T${partesFecha.hora}:${partesFecha.minuto}`
+        );
+    }
+
+    function obtenerAnioFila(fila) {
+        if (!fila) {
+            return null;
+        }
+
+        return fila.dataset.anio || null;
+    }
+
+    /** Muestra un único aviso resumiendo los registros que quedaron sin fecha por estar en el pasado. */
+    function notificarFechasOmitidasPorPasadas(registrosOmitidos) {
+        if (!registrosOmitidos.length) return;
+
+        const listaHtml = registrosOmitidos
+            .map(etiqueta => `<p class="text-[11px] text-amber-600 text-left">⚠ ${etiqueta}</p>`)
+            .join('');
+
+        swalAviso(
+            'Algunas fechas no se aplicaron',
+            `<div class="text-left space-y-1">
+                <p class="text-xs text-slate-600 mb-2">Los siguientes registros ya tienen, para su propio año, una fecha en el pasado, por lo que se dejaron en blanco:</p>
+                ${listaHtml}
+            </div>`,
+            '420px'
+        );
+    }
+
+    /**
+     * Aplica la fecha común a TODOS los registros, sin excepción, salvo
+     * aquellos cuya fecha resultante (con el año real de ese registro)
+     * ya haya pasado — esos se dejan intactos (no se tocan ni se limpian).
+     *
+     * A diferencia de la versión anterior, esta SIEMPRE sobrescribe el
+     * valor de cada registro elegible, incluso si ya tenía una fecha
+     * cargada, porque la acción es explícita (botón "Aplicar") y se
+     * confirma antes con el usuario.
+     */
+    async function aplicarFechaComun() {
+        const inputGlobal = document.getElementById('fecha-envio-global');
+
+        if (!inputGlobal || !inputGlobal.value) {
+            swalAviso(
+                'Selecciona una fecha',
+                '<p class="text-xs text-slate-600 text-left">Primero indica la fecha y hora común antes de aplicarla.</p>'
+            );
+            return;
+        }
+
+        const partesFecha = obtenerPartesFecha(inputGlobal.value);
+
+        if (!partesFecha) {
+            return;
+        }
+
+        const confirmacion = await swalConfirmarAccion({
+            titulo: 'Aplicar fecha común',
+            html: '<p class="text-xs text-slate-600 text-left">Esta acción sobrescribirá la fecha de envío de <b>todos los registros de la unidad, sin excepción</b>, con la fecha indicada. Solo quedarán sin modificar aquellos cuya fecha resultante ya haya pasado.</p>',
+            confirmButtonText: 'Sí, aplicar a todos',
+            cancelButtonText: 'Cancelar',
+            width: '440px',
+        });
+
+        if (!confirmacion.isConfirmed) return;
+
+        const registrosOmitidos = [];
+
+        document.querySelectorAll('input[id^="fecha_envio_"]').forEach(input => {
+            const key = input.id.replace('fecha_envio_', '');
+            const fila = document.getElementById(`fila-${key}`);
+
+            if (!fila) {
+                return;
+            }
+
+            const anio = obtenerAnioFila(fila);
+
+            if (!anio) {
+                return;
+            }
+
+            const fechaCandidata = construirFechaConAnio(anio, partesFecha);
+
+            // Si la fecha resultante, ya con el año real del registro, cae
+            // en el pasado, ese registro queda sin modificar.
+            if (fechaEsPasada(fechaCandidata)) {
+                registrosOmitidos.push(`${fila.dataset.mes} ${anio}`);
+                return;
+            }
+
+            // Se sobrescribe siempre, tenga o no un valor previo.
+            input.value = fechaCandidata;
+        });
+
+        marcarCambiosSinGuardar();
+        validarCoherenciaFechas();
+        notificarFechasOmitidasPorPasadas(registrosOmitidos);
+    }
+
+    /** Precarga el input de fecha común tomando como referencia el primer registro ya programado, solo por comodidad. */
+    function precargarFechaComunInicial() {
+        const inputGlobal = document.getElementById('fecha-envio-global');
+        if (!inputGlobal || inputGlobal.value) {
+            return;
+        }
+
+        const inputs = Array.from(
+            document.querySelectorAll('input[id^="fecha_envio_"]')
+        ).filter(input => input.value);
+
+        if (!inputs.length) {
+            return;
+        }
+
+        const primeraFecha = obtenerPartesFecha(inputs[0].value);
+
+        if (!primeraFecha) {
+            return;
+        }
+
+        // El año usado aquí es ficticio: solo sirve para prellenar el
+        // campo, nunca se guarda ni se usa para calcular nada.
+        inputGlobal.value = (
+            `2000-${primeraFecha.mes}-${primeraFecha.dia}` +
+            `T${primeraFecha.hora}:${primeraFecha.minuto}`
+        );
+    }
+
+    /**
+     * Revisa TODOS los registros con fecha de envío cargada y marca
+     * visualmente los que resultan inválidos por cualquiera de estos dos
+     * motivos:
+     *   - La fecha ya pasó.
+     *   - No tiene ningún correo "Para" configurado (sin destinatario no
+     *     hay a quién enviar la notificación).
+     *
+     * Mientras exista al menos un registro inválido, el botón "Guardar"
+     * permanece deshabilitado y se muestra el aviso correspondiente en
+     * el encabezado.
+     *
+     * Devuelve true si hay al menos un registro inválido.
+     */
+    function validarCoherenciaFechas() {
+        const inputsFecha = document.querySelectorAll('input[id^="fecha_envio_"]');
+        let hayFechasInvalidas = false;
+
+        inputsFecha.forEach(input => {
+            if (!input.value) {
+                marcarFechaComoValida(input);
+                return;
+            }
+
+            const key = input.id.replace('fecha_envio_', '');
+            const correos = window.correosPorRegistro[key];
+
+            const sinCorreoPara = !correos || !correos.para || correos.para.length === 0;
+            const fechaPasada = fechaEsPasada(input.value);
+
+            if (sinCorreoPara || fechaPasada) {
+                hayFechasInvalidas = true;
+                marcarFechaComoInvalida(input, { sinCorreoPara, fechaPasada });
+            } else {
+                marcarFechaComoValida(input);
+            }
+        });
+
+        actualizarEstadoBotonGuardar(hayFechasInvalidas);
+
+        return hayFechasInvalidas;
+    }
+
+    /** Aplica el estilo de error al input de fecha e indica el motivo en el title (tooltip nativo). */
+    function marcarFechaComoInvalida(input, { sinCorreoPara, fechaPasada }) {
+        input.classList.add('border-red-400', 'ring-1', 'ring-red-300');
+
+        const motivos = [];
+        if (fechaPasada) motivos.push('la fecha ya pasó');
+        if (sinCorreoPara) motivos.push('no tiene correos "Para" configurados');
+        input.title = `No se puede guardar: ${motivos.join(' y ')}.`;
+    }
+
+    /** Quita el estilo de error del input de fecha. */
+    function marcarFechaComoValida(input) {
+        input.classList.remove('border-red-400', 'ring-1', 'ring-red-300');
+        input.title = '';
+    }
+
+    /** Habilita/deshabilita el botón "Guardar" y su aviso asociado según la coherencia de las fechas. */
+    function actualizarEstadoBotonGuardar(hayFechasInvalidas) {
+        const btnGuardar = document.getElementById('btn-guardar-notificaciones');
+        const avisoFechas = document.getElementById('aviso-fechas-invalidas');
+
+        if (btnGuardar) {
+            btnGuardar.disabled = hayFechasInvalidas;
+        }
+
+        if (avisoFechas) {
+            avisoFechas.classList.toggle('hidden', !hayFechasInvalidas);
+            avisoFechas.classList.toggle('inline-flex', hayFechasInvalidas);
+        }
+    }
+    </script>
+    <script>
+        (function () {
+            try {
+                var tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+                var actual = document.cookie.split('; ').find(r => r.startsWith('django_timezone='));
+                var valorActual = actual ? decodeURIComponent(actual.split('=')[1]) : null;
+                if (tz && tz !== valorActual) {
+                    document.cookie = 'django_timezone=' + encodeURIComponent(tz) + ';path=/;max-age=31536000;samesite=lax';
+                    if (valorActual !== null) location.reload();
+                }
+            } catch (e) { /* Intl no soportado: se cae a UTC, no rompe nada */ }
+        })();
+</script>
+</body>
+</html>

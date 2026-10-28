@@ -1,0 +1,612 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block titulo %}Clep - Ordenar Capítulos{% endblock %}
+{% block header_titulo %}Ordenar Capítulos y Unidades{% endblock %}
+
+{% block header_actions %}
+<div id="status-indicator"
+    class="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg 
+           text-white bg-slate-500 transition duration-150 ease-in-out">
+    <i class="fas fa-check-circle mr-1.5"></i> 
+    <span class="hidden sm:inline">Orden Guardada</span>
+    <span class="sm:hidden">Guardado</span>
+</div>
+{% endblock %}
+
+{% block contenido %}
+<div class="max-w-full h-full flex flex-col">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 flex-1">
+        
+        <!-- SECCIÓN 1: CAPÍTULOS (ARRAGRABLE) -->
+        <section class="flex flex-col">
+            <div class="bg-white rounded-xl shadow-sm border border-indigo-50 overflow-hidden flex-1 flex flex-col">
+                <!-- Header de sección -->
+                <div class="px-4 py-3 border-b border-indigo-50 bg-slate-50">
+                    <h2 class="text-sm font-semibold text-slate-700 flex items-center">
+                        <i class="fas fa-grip-lines mr-2 text-indigo-500"></i>
+                        Capítulos (Arrastrar para reordenar)
+                    </h2>
+                </div>
+                
+                <!-- Versión cards para móvil -->
+                <div class="lg:hidden flex-1 overflow-y-auto">
+                    <div id="mobile-sortable-chapters" class="space-y-3 p-3">
+                        {% for item in capitulos %}
+                        <div class="bg-white border border-slate-200 rounded-lg p-4 cursor-pointer 
+                                  hover:shadow-sm transition-all duration-150 flex items-center justify-between 
+                                  group active:scale-[0.98]" 
+                             data-id="{{ item.id }}" 
+                             data-nombre="{{ item.nombre }}">
+                            <div class="flex items-center flex-1 min-w-0">
+                                <!-- Handle de arrastre -->
+                                <div class="drag-handle-mobile mr-3 text-slate-400 cursor-grab active:cursor-grabbing">
+                                    <i class="fas fa-grip-lines text-base"></i>
+                                </div>
+                                <!-- Nombre del capítulo -->
+                                <div class="min-w-0 flex-1">
+                                    <h3 class="text-sm font-medium text-slate-900 truncate">
+                                        {{ item.nombre }}
+                                    </h3>
+                                    <p class="text-xs text-slate-500 mt-1">
+                                        {{ forloop.counter }} de {{ capitulos|length }}
+                                    </p>
+                                </div>
+                            </div>
+                            <!-- Ícono de selección -->
+                            <div class="ml-3 text-indigo-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                </svg>
+                            </div>
+                        </div>
+                        {% endfor %}
+                        
+                        {% if not capitulos %}
+                        <div class="flex-1 flex items-center justify-center p-6">
+                            <div class="text-center">
+                                <div class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-slate-100 mb-3">
+                                    <i class="fas fa-folder-open text-slate-400"></i>
+                                </div>
+                                <h3 class="text-sm font-medium text-slate-700 mb-1">Sin capítulos</h3>
+                                <p class="text-slate-500 text-xs">
+                                    No hay capítulos para ordenar.
+                                </p>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Versión tabla para desktop -->
+                <div class="hidden lg:block flex-1 overflow-y-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50">
+                                <th class="sticky top-0 z-20 px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200 w-12">
+                                    <i class="fas fa-grip-lines"></i>
+                                </th>
+                                <th class="sticky top-0 z-20 px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200 min-w-[200px]">
+                                    Nombre del Capítulo
+                                </th>
+                                <th class="sticky top-0 z-20 px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200 w-20 text-center">
+                                    Posición
+                                </th>
+                            </tr>
+                        </thead>
+                        
+                        <tbody id="desktop-sortable-chapters">
+                            {% for item in capitulos %}
+                            <tr class="bg-white hover:bg-indigo-50/50 transition-colors cursor-pointer 
+                                       border-l-4 border-transparent" 
+                                data-id="{{ item.id }}" 
+                                data-nombre="{{ item.nombre }}">
+                                <!-- Handle de arrastre -->
+                                <td class="px-4 py-3 text-center text-slate-400 drag-handle cursor-grab active:cursor-grabbing">
+                                    <i class="fas fa-grip-lines text-base"></i>
+                                </td>
+                                <!-- Nombre del capítulo -->
+                                <td class="px-4 py-3">
+                                    <div class="text-sm text-slate-900 truncate max-w-[400px] xl:max-w-[500px] 2xl:max-w-[600px]" title="{{ item.nombre }}">
+                                        {{ item.nombre }}
+                                    </div>
+                                </td>
+                                <!-- Número de posición -->
+                                <td class="px-4 py-3 text-center">
+                                    <span class="inline-flex items-center justify-center w-6 h-6 rounded-full 
+                                                 bg-slate-100 text-xs font-medium text-slate-700">
+                                        {{ forloop.counter }}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                            
+                            {% if not capitulos %}
+                            <tr>
+                                <td colspan="3" class="px-4 py-6 text-center text-slate-400">
+                                    <div class="flex flex-col items-center">
+                                        <i class="fas fa-folder-open text-xl mb-2"></i>
+                                        <p class="text-sm">No hay capítulos para mostrar</p>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECCIÓN 2: UNIDADES (SÓLO INFORMATIVA) -->
+        <section class="flex flex-col">
+            <div class="bg-white rounded-xl shadow-sm border border-indigo-50 overflow-hidden flex-1 flex flex-col">
+                <!-- Header de sección dinámico -->
+                <div class="px-4 py-3 border-b border-indigo-50 bg-slate-50">
+                    <h2 id="units-title" class="text-sm font-semibold text-slate-700 flex items-center">
+                        <i class="fas fa-list mr-2 text-indigo-500"></i>
+                        Unidades del capítulo seleccionado
+                    </h2>
+                </div>
+                
+                <!-- Mensaje inicial -->
+                <div id="unit-placeholder" class="flex-1 flex items-center justify-center p-6">
+                    <div class="text-center">
+                        <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-indigo-50 mb-3">
+                            <i class="fas fa-mouse-pointer text-indigo-500"></i>
+                        </div>
+                        <h3 class="text-sm font-medium text-slate-700 mb-1">Selecciona un capítulo</h3>
+                        <p class="text-slate-500 text-xs">
+                            Haz clic en un capítulo para ver sus unidades
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- Lista de unidades (oculta inicialmente) -->
+                <div id="units-container" class="hidden flex-1 flex flex-col">
+                    <!-- Versión mobile cards -->
+                    <div class="lg:hidden flex-1 overflow-y-auto">
+                        <div id="mobile-units-container" class="space-y-3 p-3">
+                            <!-- Las unidades se cargarán aquí dinámicamente -->
+                        </div>
+                    </div>
+                    
+                    <!-- Versión desktop tabla -->
+                    <div class="hidden lg:block flex-1 overflow-y-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-50">
+                                    <th class="sticky top-0 z-20 px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200 min-w-[200px]">
+                                        Nombre de la Unidad
+                                    </th>
+                                    <th class="sticky top-0 z-20 px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200 w-20 text-center">
+                                        Orden
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody id="desktop-units-body">
+                                <!-- Las unidades se cargarán aquí dinámicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+
+<style>
+    /* Estilos para arrastrar */
+    .sortable-ghost {
+        opacity: 0.4;
+        background-color: #f0f9ff !important;
+        border: 2px dashed #6366f1 !important;
+        border-radius: 0.5rem;
+    }
+    
+    .sortable-chosen {
+        background-color: #f0f9ff !important;
+        box-shadow: 0 2px 8px rgba(99, 102, 241, 0.15);
+        transform: scale(1.02);
+        z-index: 10;
+    }
+    
+    /* Capítulo seleccionado */
+    .chapter-selected {
+        border-left-color: #6366f1 !important;
+        background-color: #f0f9ff !important;
+    }
+    
+    .chapter-card-selected {
+        border-color: #6366f1 !important;
+        background-color: #f0f9ff !important;
+        box-shadow: 0 2px 8px rgba(99, 102, 241, 0.15);
+    }
+    
+    /* Animaciones */
+    .drag-handle, .drag-handle-mobile {
+        transition: all 0.2s ease;
+    }
+    
+    .drag-handle:hover, .drag-handle-mobile:hover {
+        color: #6366f1;
+        transform: scale(1.1);
+    }
+    
+    .drag-handle:active, .drag-handle-mobile:active {
+        color: #4f46e5;
+        transform: scale(1.2);
+    }
+    
+    /* Transiciones suaves */
+    .chapter-card, .chapter-row {
+        transition: all 0.2s ease-in-out;
+    }
+    
+    /* Scrollbar personalizado */
+    .overflow-y-auto {
+        scrollbar-width: thin;
+        scrollbar-color: #cbd5e1 #f1f5f9;
+    }
+    
+    .overflow-y-auto::-webkit-scrollbar {
+        width: 6px;
+    }
+    
+    .overflow-y-auto::-webkit-scrollbar-track {
+        background: #f1f5f9;
+        border-radius: 3px;
+    }
+    
+    .overflow-y-auto::-webkit-scrollbar-thumb {
+        background-color: #cbd5e1;
+        border-radius: 3px;
+    }
+    
+    .overflow-y-auto::-webkit-scrollbar-thumb:hover {
+        background-color: #94a3b8;
+    }
+    
+    /* Mejoras para las tablas */
+    table {
+        table-layout: auto;
+    }
+    
+    th, td {
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+    }
+    
+    /* Asegurar que las tablas usen el ancho completo */
+    .min-w-0 {
+        min-width: 0;
+    }
+    
+    .flex-1 {
+        flex: 1 1 0%;
+    }
+    
+    /* Ajustes responsive para el texto */
+    @media (min-width: 1280px) {
+        .max-w-\[400px\] {
+            max-width: 500px;
+        }
+    }
+    
+    @media (min-width: 1536px) {
+        .max-w-\[400px\] {
+            max-width: 600px;
+        }
+    }
+</style>
+
+<script>
+    // Variables globales
+    const ALL_UNITS_DATA = {{ unidades|safe }};
+    let isSaving = false;
+    let currentSelectedChapter = null;
+    
+    // Elementos del DOM
+    const statusIndicator = document.getElementById('status-indicator');
+    const unitsTitle = document.getElementById('units-title');
+    const unitPlaceholder = document.getElementById('unit-placeholder');
+    const unitsContainer = document.getElementById('units-container');
+    const mobileUnitsContainer = document.getElementById('mobile-units-container');
+    const desktopUnitsBody = document.getElementById('desktop-units-body');
+    
+    // Mostrar estado
+    function showStatus(type, message, iconClass, bgColor) {
+        statusIndicator.innerHTML = `<i class="${iconClass} mr-1.5"></i> ${message}`;
+        statusIndicator.className = `inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg 
+                                     text-white ${bgColor} transition duration-150 ease-in-out`;
+    }
+    
+    function showSavedStatus() {
+        showStatus('saved', 'Orden Guardada', 'fas fa-check-circle', 'bg-slate-500');
+    }
+    
+    function showSavingStatus() {
+        showStatus('saving', 'Guardando...', 'fas fa-spinner fa-spin', 'bg-amber-500');
+    }
+    
+    function showSuccessStatus() {
+        showStatus('success', '¡Orden Actualizada!', 'fas fa-thumbs-up', 'bg-emerald-600');
+        setTimeout(showSavedStatus, 2000);
+    }
+    
+    function showErrorStatus(error) {
+        const msg = error.length > 30 ? 'Error al guardar' : error;
+        showStatus('error', `Error: ${msg}`, 'fas fa-times-circle', 'bg-rose-600');
+        setTimeout(showSavedStatus, 4000);
+    }
+    
+    // Obtener CSRF token
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    
+    // Guardar nuevo orden
+    async function saveNewChapterOrder(isMobile = false) {
+        if (isSaving) {
+            console.log('Guardado en curso, omitiendo nueva solicitud.');
+            return;
+        }
+        
+        isSaving = true;
+        showSavingStatus();
+        
+        try {
+            // Obtener el orden actual según el dispositivo
+            let newOrder;
+            if (isMobile) {
+                const mobileChapters = document.querySelectorAll('#mobile-sortable-chapters > div[data-nombre]');
+                newOrder = Array.from(mobileChapters).map(card => card.getAttribute('data-nombre'));
+            } else {
+                const desktopRows = document.querySelectorAll('#desktop-sortable-chapters tr[data-nombre]');
+                newOrder = Array.from(desktopRows).map(row => row.getAttribute('data-nombre'));
+            }
+            
+            const dataToSend = {
+                chapters_order: newOrder,
+            };
+            
+            const response = await fetch('/ordenar_capitulos/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken'),
+                },
+                body: JSON.stringify(dataToSend),
+            });
+            
+            if (response.ok) {
+                showSuccessStatus();
+                // Actualizar números de posición
+                updatePositionNumbers(isMobile);
+                
+                // Si hay un capítulo seleccionado, actualizar sus unidades
+                if (currentSelectedChapter && newOrder.includes(currentSelectedChapter)) {
+                    renderUnits(currentSelectedChapter);
+                }
+            } else {
+                const errorData = await response.json().catch(() => ({}));
+                const errorMessage = errorData.error || `Error ${response.status}: No se pudo guardar el orden.`;
+                console.error(errorMessage);
+                showErrorStatus(errorMessage);
+            }
+            
+        } catch (error) {
+            console.error('Error de red al guardar:', error);
+            showErrorStatus('Error de red');
+        } finally {
+            isSaving = false;
+        }
+    }
+    
+    // Actualizar números de posición
+    function updatePositionNumbers(isMobile = false) {
+        if (isMobile) {
+            const mobileChapters = document.querySelectorAll('#mobile-sortable-chapters > div[data-nombre]');
+            mobileChapters.forEach((card, index) => {
+                const positionText = card.querySelector('p.text-xs');
+                if (positionText) {
+                    positionText.textContent = `${index + 1} de ${mobileChapters.length}`;
+                }
+            });
+        } else {
+            const desktopRows = document.querySelectorAll('#desktop-sortable-chapters tr[data-nombre]');
+            desktopRows.forEach((row, index) => {
+                const positionSpan = row.querySelector('td:nth-child(3) span');
+                if (positionSpan) {
+                    positionSpan.textContent = index + 1;
+                }
+            });
+        }
+    }
+    
+    // Renderizar unidades
+    function renderUnits(chapterName) {
+        currentSelectedChapter = chapterName;
+        
+        // Ocultar placeholder y mostrar contenedor
+        unitPlaceholder.classList.add('hidden');
+        unitsContainer.classList.remove('hidden');
+        
+        // Actualizar título
+        const MAX_TITLE_LENGTH = 40;
+        let displayChapterName = chapterName;
+        if (chapterName.length > MAX_TITLE_LENGTH) {
+            displayChapterName = chapterName.substring(0, MAX_TITLE_LENGTH) + '...';
+        }
+        
+        unitsTitle.innerHTML = `<i class="fas fa-list mr-2 text-indigo-500"></i> 
+                               <span class="font-normal">${displayChapterName}</span>`;
+        
+        // Filtrar y ordenar unidades
+        const unitsToRender = ALL_UNITS_DATA
+            .filter(unit => unit.capitulo_nombre === chapterName)
+            .sort((a, b) => a.orden - b.orden);
+        
+        // Versión móvil (cards)
+        if (unitsToRender.length === 0) {
+            mobileUnitsContainer.innerHTML = `
+                <div class="flex-1 flex items-center justify-center py-6">
+                    <div class="text-center">
+                        <div class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-slate-100 mb-2">
+                            <i class="fas fa-times text-slate-400"></i>
+                        </div>
+                        <p class="text-slate-500 text-xs">No hay unidades en este capítulo</p>
+                    </div>
+                </div>
+            `;
+        } else {
+            mobileUnitsContainer.innerHTML = unitsToRender.map((unit, index) => `
+                <div class="bg-white border border-slate-200 rounded-lg p-3 hover:bg-slate-50 transition duration-150">
+                    <div class="flex items-center justify-between">
+                        <div class="flex-1 min-w-0">
+                            <h4 class="text-sm font-medium text-slate-900 truncate" title="${unit.unidad_nombre}">
+                                ${unit.unidad_nombre}
+                            </h4>
+                            <p class="text-[11px] text-slate-500 mt-1">Unidad ${index + 1}</p>
+                        </div>
+                        <div class="ml-3 text-indigo-400">
+                            <i class="fas fa-file-alt text-sm"></i>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        // Versión desktop (tabla)
+        if (unitsToRender.length === 0) {
+            desktopUnitsBody.innerHTML = `
+                <tr>
+                    <td colspan="2" class="px-4 py-6 text-center text-slate-400">
+                        <div class="flex flex-col items-center">
+                            <i class="fas fa-times text-xl mb-2"></i>
+                            <p class="text-sm">No hay unidades asociadas a este capítulo.</p>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        } else {
+            desktopUnitsBody.innerHTML = unitsToRender.map((unit, index) => `
+                <tr class="hover:bg-slate-50 transition duration-150">
+                    <td class="px-4 py-3">
+                        <div class="text-sm text-slate-900 truncate max-w-[400px] xl:max-w-[500px] 2xl:max-w-[600px]" title="${unit.unidad_nombre}">
+                            ${unit.unidad_nombre}
+                        </div>
+                    </td>
+                    <td class="px-4 py-3 text-center">
+                        <span class="inline-flex items-center justify-center w-6 h-6 rounded-full 
+                                     bg-indigo-100 text-indigo-800 text-xs font-medium">
+                            ${index + 1}
+                        </span>
+                    </td>
+                </tr>
+            `).join('');
+        }
+    }
+    
+    // Inicialización
+    document.addEventListener('DOMContentLoaded', () => {
+        showSavedStatus();
+        
+        // Inicializar SortableJS para desktop
+        const desktopChaptersList = document.getElementById('desktop-sortable-chapters');
+        if (desktopChaptersList) {
+            new Sortable(desktopChaptersList, {
+                animation: 200,
+                handle: '.drag-handle',
+                ghostClass: 'sortable-ghost',
+                chosenClass: 'sortable-chosen',
+                dragClass: 'sortable-drag',
+                onEnd: function (evt) {
+                    if (evt.oldIndex !== evt.newIndex) {
+                        saveNewChapterOrder(false);
+                    }
+                },
+            });
+        }
+        
+        // Inicializar SortableJS para móvil
+        const mobileChaptersList = document.getElementById('mobile-sortable-chapters');
+        if (mobileChaptersList) {
+            new Sortable(mobileChaptersList, {
+                animation: 200,
+                handle: '.drag-handle-mobile',
+                ghostClass: 'sortable-ghost',
+                chosenClass: 'sortable-chosen',
+                dragClass: 'sortable-drag',
+                onEnd: function (evt) {
+                    if (evt.oldIndex !== evt.newIndex) {
+                        saveNewChapterOrder(true);
+                    }
+                },
+            });
+        }
+        
+        // Manejar clic en capítulos (desktop)
+        if (desktopChaptersList) {
+            desktopChaptersList.addEventListener('click', (event) => {
+                const row = event.target.closest('tr[data-nombre]');
+                if (!row) return;
+                
+                // Desseleccionar todos
+                document.querySelectorAll('#desktop-sortable-chapters tr').forEach(r => {
+                    r.classList.remove('chapter-selected');
+                });
+                
+                // Seleccionar el clicado
+                row.classList.add('chapter-selected');
+                
+                const chapterName = row.getAttribute('data-nombre');
+                renderUnits(chapterName);
+            });
+        }
+        
+        // Manejar clic en capítulos (móvil)
+        if (mobileChaptersList) {
+            mobileChaptersList.addEventListener('click', (event) => {
+                const card = event.target.closest('div[data-nombre]');
+                if (!card) return;
+                
+                // Desseleccionar todos
+                document.querySelectorAll('#mobile-sortable-chapters > div[data-nombre]').forEach(c => {
+                    c.classList.remove('chapter-card-selected');
+                });
+                
+                // Seleccionar el clicado
+                card.classList.add('chapter-card-selected');
+                
+                const chapterName = card.getAttribute('data-nombre');
+                renderUnits(chapterName);
+            });
+        }
+        
+        // Seleccionar primer capítulo automáticamente si existe
+        setTimeout(() => {
+            const firstChapter = document.querySelector('#desktop-sortable-chapters tr[data-nombre], #mobile-sortable-chapters > div[data-nombre]');
+            if (firstChapter) {
+                firstChapter.click();
+            }
+        }, 100);
+    });
+</script>
+{% endblock %}

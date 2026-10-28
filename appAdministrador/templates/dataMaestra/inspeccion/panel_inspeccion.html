@@ -1,0 +1,152 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block titulo %}Clep - Inspecciones{% endblock %}
+{% block header_titulo %}Inspecciones{% endblock %}
+
+{% block contenido %}
+<div class="max-w-full h-full flex flex-col">
+    {% if inspecciones %}
+        <!-- Contador de inspecciones -->
+        <div class="mb-4 px-1">
+            <p class="text-xs text-slate-500 font-medium">
+                {{ inspecciones|length }} inspeccion{{ inspecciones|length|pluralize:"es" }}
+            </p>
+        </div>
+
+        <!-- Contenedor de datos -->
+        <div class="bg-white rounded-xl shadow-sm border border-indigo-50 overflow-hidden flex flex-col flex-1">
+            <!-- Vista escritorio -->
+            <div class="hidden lg:block overflow-x-auto overflow-y-auto flex-1">
+                <table class="w-full text-left border-separate border-spacing-0 min-w-full">
+                    <thead>
+                        <tr>
+                            <th class="sticky top-0 z-20 bg-indigo-50 px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-indigo-100">
+                                Código
+                            </th>
+                            <th class="sticky top-0 z-20 bg-indigo-50 px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-indigo-100">
+                                Nombre
+                            </th>
+                            <th class="sticky top-0 z-20 bg-indigo-50 px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-indigo-100">
+                                Descripción
+                            </th>
+                            <th class="sticky top-0 z-20 bg-indigo-50 px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-indigo-100">
+                                Notificación (A)
+                            </th>
+                        </tr>
+                    </thead>
+                    
+                    <tbody class="divide-y divide-slate-100">
+                        {% for inspeccion in inspecciones %}
+                        <tr class="hover:bg-indigo-50/50 transition-colors group cursor-pointer" 
+                            onclick="window.location.href='{% url 'editar_inspeccion' inspeccion.id %}'">
+                            
+                            <td class="px-4 py-3 border-b border-slate-50">
+                                <div class="flex items-center gap-3">
+                                    <div class="inline-flex items-center justify-center px-3 py-1 rounded-md text-xs font-bold uppercase tracking-wider text-white shadow-sm min-w-[70px]"
+                                         style="background-color: {{ inspeccion.color_inspeccion|default:'#4ade80' }};">
+                                        {{ inspeccion.codigo_inspeccion }}
+                                    </div>
+                                </div>
+                            </td>
+                            
+                            <td class="px-4 py-3 border-b border-slate-50">
+                                <div class="text-xs font-semibold text-slate-900 truncate max-w-[200px]">
+                                    {{ inspeccion.nombre_inspeccion }}
+                                </div>
+                            </td>
+                            
+                            <td class="px-4 py-3 border-b border-slate-50">
+                                <div class="text-xs text-slate-600 truncate max-w-[300px]">
+                                    {{ inspeccion.descripcion_inspeccion }}
+                                </div>
+                            </td>
+                            
+                            <td class="px-4 py-3 border-b border-slate-50">
+                                <div class="flex justify-between items-center">
+                                    <div class="text-xs text-slate-600 truncate max-w-[180px]">
+                                        {{ inspeccion.notificacionA_inspeccion }}
+                                    </div>
+                                    <svg class="w-3.5 h-3.5 text-indigo-400 opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                    </svg>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Vista móvil - Lista vertical -->
+            <div class="lg:hidden overflow-y-auto flex-1">
+                <div class="space-y-3 p-3">
+                    {% for inspeccion in inspecciones %}
+                    <div class="bg-white p-4 rounded-xl border border-slate-100 shadow-sm active:scale-[0.98] transition-transform cursor-pointer" 
+                         onclick="window.location.href='{% url 'editar_inspeccion' inspeccion.id %}'">
+                        
+                        <!-- Header con código y flecha -->
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="inline-flex items-center justify-center px-3 py-1 rounded-md text-xs font-bold uppercase tracking-wider text-white shadow-sm"
+                                 style="background-color: {{ inspeccion.color_inspeccion|default:'#4ade80' }};">
+                                {{ inspeccion.codigo_inspeccion }}
+                            </div>
+                            <svg class="w-3.5 h-3.5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                            </svg>
+                        </div>
+
+                        <!-- Nombre -->
+                        <h3 class="text-sm font-bold text-slate-900 mb-3 truncate">
+                            {{ inspeccion.nombre_inspeccion }}
+                        </h3>
+                        
+                        <!-- Descripción y Notificación -->
+                        <div class="space-y-3">
+                            <div>
+                                <span class="text-[10px] uppercase font-semibold text-slate-400 block tracking-tight mb-1">
+                                    Descripción
+                                </span>
+                                <p class="text-slate-600 text-xs line-clamp-2">
+                                    {{ inspeccion.descripcion_inspeccion }}
+                                </p>
+                            </div>
+                            
+                            <div>
+                                <span class="text-[10px] uppercase font-semibold text-slate-400 block tracking-tight mb-1">
+                                    Notificación (A)
+                                </span>
+                                <p class="text-slate-600 text-xs truncate">
+                                    {{ inspeccion.notificacionA_inspeccion }}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Contador de resultados -->
+            <div class="px-4 py-2.5 border-t border-indigo-50 bg-slate-50/50">
+                <span class="text-xs text-slate-400 font-medium">
+                    Total: {{ inspecciones|length }} inspeccion{{ inspecciones|length|pluralize:"es" }}
+                </span>
+            </div>
+        </div>
+
+    {% else %}
+        <!-- Estado vacío -->
+        <div class="flex-1 flex items-center justify-center">
+            <div class="text-center py-8 bg-white rounded-xl border border-slate-100 shadow-sm px-6 max-w-xs">
+                <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-indigo-50 mb-3">
+                    <i class="fas fa-clipboard-list text-indigo-500 text-lg"></i>
+                </div>
+                <h3 class="text-base font-semibold text-slate-800 mb-2">Sin inspecciones</h3>
+                <p class="text-slate-600 mb-4 text-xs">
+                    No se han encontrado registros en el sistema.
+                </p>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

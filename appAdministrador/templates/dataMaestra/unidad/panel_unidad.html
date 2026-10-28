@@ -1,0 +1,913 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clep - Unidades</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" href="{% static 'img/icono.png' %}">
+    <link rel="stylesheet" href="{% static 'css/estiloGlobal.css' %}">
+    
+    <style>
+    :root {
+        --sidebar-width: 350px; 
+        --header-height: 70px;
+        --accent-color: #4f46e5;
+        --bg-main: #fcfcfd;
+    }
+    
+    body {
+        font-family: 'Poppins', sans-serif;
+    }
+    </style>
+</head>
+
+<body class="bg-gray-50">
+{% include 'base/mensajes.html' %}
+<div class="flex h-screen">
+    <aside id="sidebar-principal"
+    class="fixed top-0 left-0 w-[350px] h-screen z-[100]
+        bg-white/85 backdrop-blur-sm border-r border-gray-200
+        flex flex-col overflow-hidden
+        transform -translate-x-full md:translate-x-0
+        transition-transform duration-300 ease-in-out">
+        
+        <div class="p-4 border-b border-indigo-50 relative">
+            <div class="absolute left-4 top-6">
+                <a href="{% url 'editar_ccpp' ccpp.id_ccpp %}" class="text-slate-400 hover:text-indigo-600 transition-colors flex items-center">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                    </svg>
+                </a>
+            </div>
+
+            <div class="flex flex-col items-center">
+                <div class="flex items-center gap-3">
+                    <a href="{% url 'panel_principal' %}" class="space-x-3">
+                        <div class="flex items-center gap-3">
+                            <div class="flex-shrink-0">
+                                <img src="{% static 'img/logo.png' %}" 
+                                    alt="Logo clep" 
+                                    class="w-32 h-16 object-contain drop-shadow-sm transition-transform duration-300 hover:scale-110">
+                            </div>
+                        </div>
+                    </a>
+                </div>
+
+                <div id="info-ccpp-container" class="w-full max-w-xs px-2 mt-4 {% if modo_inicial == 'gestion' %}hidden{% endif %}">
+                    <div class="bg-white border border-slate-300 rounded-xl shadow-sm overflow-hidden">
+                        <div class="bg-slate-900 py-1.5 px-3">
+                            <span class="block w-full text-sm font-bold text-white text-center">
+                                CCPP{{ ccpp.id_ccpp|stringformat:'03d' }}
+                            </span>
+                        </div>
+                        
+                        <div class="p-3 space-y-2">
+                            <div class="text-center">
+                                <span class="block w-full text-[12px] font-bold text-slate-900 underline truncate">
+                                    {{ ccpp.nombre|default:'Sin nombre' }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <nav class="flex-grow px-3 py-4 overflow-y-auto scrollbar-thin">
+            <div class="bg-white rounded-xl border border-green-400 shadow-sm mb-4 overflow-hidden">
+                <div class="bg-slate-50 border-b border-slate-100 px-4 py-2.5 flex items-center">
+                    <div class="w-1 h-4 bg-green-500 rounded-full mr-2"></div>
+                    <p class="text-[11px] font-bold text-slate-700 uppercase tracking-wider">Acciones</p>
+                </div>
+
+                <div class="p-1.5">
+                    {% if modo_inicial == 'asignacion' %}
+                        <button type="submit" form="form-cronograma" 
+                                class="w-full group flex items-center px-3 py-2.5 text-slate-600 hover:bg-slate-100 rounded-md transition-all duration-200">
+                            <div class="p-1.5 rounded-lg bg-slate-50 group-hover:bg-white group-hover:shadow-sm transition-all mr-3">
+                                <svg class="w-4 h-4 text-slate-500 group-hover:text-slate-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path>
+                                </svg>
+                            </div>
+                            <span class="text-[13px] font-medium group-hover:text-slate-900">Guardar asignaciones</span>
+                        </button>
+                    {% else %}
+                        <a href="{% url 'nueva_unidad' ccpp.id_ccpp %}" 
+                        class="w-full group flex items-center px-3 py-2.5 text-slate-600 hover:bg-slate-100 rounded-md transition-all duration-200">
+                            <div class="p-1.5 rounded-lg bg-slate-50 group-hover:bg-white group-hover:shadow-sm transition-all mr-3">
+                                <svg class="w-4 h-4 text-slate-500 group-hover:text-slate-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 4v16m8-8H4"></path>
+                                </svg>
+                            </div>
+                            <span class="text-[13px] font-medium group-hover:text-slate-900">Nueva unidad</span>
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <p class="menu-label block text-[10px] font-bold {% if modo_inicial == 'gestion' %}text-orange-900{% else %}text-slate-900{% endif %} uppercase tracking-wider mb-2 ml-0.5 transition-colors duration-200">Capítulos Disponibles</p>
+                <div class="flex flex-col gap-0">
+                    <div class="group flex items-center justify-between px-2 py-0.5 text-[12px]
+                                text-slate-600 hover:bg-indigo-50 hover:text-indigo-700
+                                rounded-md transition-all font-semibold">
+                        <a href="#" data-capitulo="__ALL__"
+                        class="flex items-center gap-2 truncate flex-1">
+                            <svg class="w-2.5 h-2.5 text-slate-300 group-hover:text-indigo-400"
+                                fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M3 12h18" />
+                            </svg>
+                            <span>Todos los capítulos</span>
+                        </a>
+                    </div>
+
+                    {% for cap in valores_capitulo %}
+                    <div class="group flex items-center justify-between px-2 py-0.5 text-[12px] text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 rounded-md transition-all">
+                        <a href="#" data-capitulo="{{ cap }}" class="flex items-center gap-2 truncate flex-1">
+                            <svg class="w-2.5 h-2.5 text-slate-300 group-hover:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                            </svg>
+                            <span class="truncate">{{ cap }}</span>
+                        </a>
+
+                        <button
+                            type="button"
+                            onclick="openEditCapituloModal('{{ cap|escapejs }}')"
+                            class="opacity-0 group-hover:opacity-100 transition-opacity text-slate-400 hover:text-indigo-600 ml-2"
+                            title="Editar capítulo">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                    d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                            </svg>
+                        </button>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </nav>
+
+        <div class="bg-gray-50 border-t border-gray-200 px-4 py-3">
+            <div class="flex items-center justify-between text-[10px]">
+                <span class="font-bold text-slate-700 uppercase">Resumen Menú:</span>
+                <span class="text-slate-600">Capítulos: <strong class="text-indigo-600">{{ valores_capitulo|length }}</strong></span>
+            </div>
+        </div>
+
+        <div class="p-2 border-t border-indigo-50">
+            <div class="flex items-center p-1.5 space-x-2 bg-indigo-50/50 rounded-md">
+                <div class="w-6 h-6 rounded-full bg-indigo-600 flex items-center justify-center text-white font-bold text-[10px]">
+                    {{ user.username|slice:":2"|upper }}
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-xs font-semibold text-slate-900 truncate">{{ user.username }}</p>
+                    <p class="text-[11px] text-indigo-500 truncate">{{ user.email }}</p>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <main id="main-content" class="md:ml-[350px] flex-1 h-screen overflow-y-auto flex flex-col bg-gray-50 transition-all">
+        <header class="px-6 py-3 bg-white border-b border-gray-200 sticky top-0 z-[60]">
+            <div class="flex flex-col gap-4">
+                <div class="flex items-center gap-4">
+                    <h2 id="main-title" class="text-lg font-bold {% if modo_inicial == 'gestion' %}text-orange-900{% else %}text-slate-800{% endif %} leading-tight transition-colors duration-200">
+                        {% if modo_inicial == 'gestion' %}
+                            Gestión Unidades (Incluir, Modificar o Eliminar)
+                        {% else %}
+                            Asignar Unidades
+                        {% endif %}
+                    </h2>
+                    
+                    <div class="h-4 w-[1px] bg-slate-300"></div>
+
+                    <nav class="flex" aria-label="Breadcrumb">
+                        <ol class="inline-flex items-center space-x-1 md:space-x-2">
+                            <li class="inline-flex items-center">
+                                <a href="/" class="text-[11px] font-medium text-slate-500 hover:text-indigo-600">Inicio</a>
+                            </li>
+                            <li>
+                                <div class="flex items-center">
+                                    <svg class="w-2.5 h-2.5 text-slate-400 mx-1" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10">
+                                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 9 4-4-4-4"/>
+                                    </svg>
+                                    <a href="{% url 'ccpp' %}" class="ml-1 text-[11px] font-medium text-slate-500 hover:text-indigo-600">CCPP</a>
+                                </div>
+                            </li>
+                            <li>
+                                <div class="flex items-center">
+                                    <svg class="w-2.5 h-2.5 text-slate-400 mx-1" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10">
+                                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 9 4-4-4-4"/>
+                                    </svg>
+                                    <a href="{% url 'editar_ccpp' ccpp.id_ccpp %}" class="ml-1 text-[11px] font-medium text-slate-500 hover:text-indigo-600">Detalle CCPP</a>
+                                </div>
+                            </li>
+                            <li aria-current="page">
+                                <div class="flex items-center">
+                                    <svg class="w-2.5 h-2.5 text-slate-400 mx-1" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10">
+                                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 9 4-4-4-4"/>
+                                    </svg>
+                                    <span class="ml-1 text-[11px] font-semibold text-indigo-600 tracking-wide">Unidades</span>
+                                </div>
+                            </li>
+                        </ol>
+                    </nav>
+                </div>
+
+                <div class="flex flex-wrap items-center justify-between gap-4">
+                    <div class="flex flex-wrap items-center gap-2 ml-auto"> 
+                        <div class="flex items-center gap-1.5">
+                            <label for="filter-global" class="text-[9px] font-bold text-slate-500 uppercase tracking-tighter">
+                                Buscar:
+                            </label>
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 flex items-center pl-2 pointer-events-none">
+                                    <svg class="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                    </svg>
+                                </span>
+                                <input
+                                    type="text"
+                                    id="filter-global"
+                                    placeholder="Buscar todo..."
+                                    class="block w-40 pl-7 pr-2 py-1 text-[11px] border border-gray-200 rounded-md
+                                        focus:ring-1 focus:ring-indigo-200 focus:border-indigo-200
+                                        bg-gray-50 outline-none transition-all">
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-1.5"> 
+                            <label for="filter-doc" class="text-[9px] font-bold text-slate-500 uppercase tracking-tighter">DOC:</label>
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 flex items-center pl-2 pointer-events-none">
+                                    <svg class="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                    </svg>
+                                </span>
+                                <input type="text" id="filter-doc" placeholder="Buscar..." 
+                                    class="block w-24 pl-7 pr-2 py-1 text-[11px] border border-gray-200 rounded-md focus:ring-1 focus:ring-indigo-200 focus:border-indigo-200 bg-gray-50 outline-none transition-all">
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-1.5">
+                            <label for="sort-select" class="text-[9px] font-bold text-slate-500 uppercase tracking-tighter">Ordenar:</label>
+                            <select id="sort-select" 
+                                class="block w-28 px-2 py-1 text-[11px] border border-gray-200 rounded-md focus:ring-1 focus:ring-indigo-200 focus:border-indigo-200 bg-gray-50 outline-none cursor-pointer transition-all">
+                                <option value="capitulo">Capítulo</option>
+                                <option value="unidad">Unidad</option>
+                                <option value="doc">DOC</option>
+                            </select>
+                        </div>
+
+                        <div class="flex items-center gap-1.5">
+                            <label for="filter-status" class="text-[9px] font-bold text-slate-500 uppercase tracking-tighter">Estado:</label>
+                            <select id="filter-status" 
+                                class="block w-28 px-2 py-1 text-[11px] border border-gray-200 rounded-md focus:ring-1 focus:ring-indigo-200 focus:border-indigo-200 bg-gray-50 outline-none cursor-pointer transition-all">
+                                <option value="todos">Todos</option>
+                                <option value="asignadas">Asignadas</option>
+                                <option value="no-asignadas">No Asignadas</option>
+                            </select>
+                        </div>
+
+                        <button type="button" id="btn-reset-filters" 
+                                title="Limpiar todos los filtros"
+                                class="p-1 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-full transition-colors duration-200 focus:outline-none">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                    d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                    d="M15 13l4 4m0-4l-4 4" />
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div class="flex items-center bg-slate-50 border border-slate-200 rounded-lg p-1">
+                        <a href="{% url 'gestionUnidades_ccpp_modo' ccpp.id_ccpp 'gestion' %}" 
+                        class="inline-flex items-center px-3 py-1 text-[11px] font-medium rounded-sm transition-all duration-200
+                        {% if modo_inicial == 'gestion' %}bg-white text-indigo-600 shadow-sm{% else %}text-slate-600 hover:text-indigo-600{% endif %}">
+                            <input type="radio" name="modo_vista" 
+                                class="modo-radio w-3.5 h-3.5 text-indigo-600 mr-1.5 cursor-pointer" 
+                                data-url="{% url 'gestionUnidades_ccpp_modo' ccpp.id_ccpp 'gestion' %}"
+                                {% if modo_inicial == 'gestion' %}checked{% endif %}>
+                            Gestión
+                        </a>
+                        
+                        <div class="h-4 w-[1px] bg-slate-200 mx-1"></div>
+                        
+                        <a href="{% url 'gestionUnidades_ccpp_modo' ccpp.id_ccpp 'asignacion' %}" 
+                        class="inline-flex items-center px-3 py-1 text-[11px] font-medium rounded-sm transition-all duration-200
+                        {% if modo_inicial == 'asignacion' %}bg-white text-indigo-600 shadow-sm{% else %}text-slate-600 hover:text-indigo-600{% endif %}">
+                            <input type="radio" name="modo_vista" 
+                                class="modo-radio w-3.5 h-3.5 text-indigo-600 mr-1.5 cursor-pointer" 
+                                data-url="{% url 'gestionUnidades_ccpp_modo' ccpp.id_ccpp 'asignacion' %}"
+                                {% if modo_inicial == 'asignacion' %}checked{% endif %}>
+                            Asignación
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Botón menú móvil -->
+            <button id="btn-toggle-sidebar"
+                class="md:hidden flex items-center justify-center w-9 h-9 rounded-lg
+                    text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 transition">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M4 6h16M4 12h16M4 18h16"/>
+                </svg>
+            </button>
+        </header>
+
+        <section class="p-0 flex-1 overflow-hidden">
+            {% if modo_inicial == 'asignacion' %}
+            <form method="POST" id="form-cronograma" class="h-full" action="{% url 'gestionUnidades_ccpp_modo' ccpp.id_ccpp 'asignacion' %}">
+                {% csrf_token %}
+            {% else %}
+            <div class="h-full">
+            {% endif %}
+
+                <!-- TABLA -->
+                <div class="w-full h-full overflow-auto bg-white">
+                    <table class="w-full text-left align-middle text-[10.5px] border-separate border-spacing-0">
+                        <thead>
+                            <tr>
+                                {% if modo_inicial == 'asignacion' %}
+                                <th class="sticky top-0 left-0 z-50 bg-gray-200 px-3 py-2 text-center border-b border-gray-300 w-10">
+                                    <input type="checkbox" id="select-all-units" class="w-3.5 h-3.5 text-indigo-600 rounded focus:ring-indigo-500 cursor-pointer">
+                                </th>
+                                {% endif %}
+                                
+                                <th class="sticky top-0 z-40 bg-gray-200 px-4 py-2 text-[10px] font-bold uppercase tracking-tight text-slate-700 border-b border-gray-300">
+                                    Unidad
+                                </th>
+                                <th class="sticky top-0 z-40 bg-gray-200 px-4 py-2 text-[10px] font-bold uppercase tracking-tight text-slate-700 border-b border-gray-300">
+                                    Capítulo
+                                </th>
+                                <th class="sticky top-0 z-40 bg-gray-200 px-4 py-2 text-[10px] font-bold uppercase tracking-tight text-slate-700 border-b border-gray-300">
+                                    Descripción
+                                </th>
+                                <th class="sticky top-0 z-40 bg-gray-200 px-4 py-2 text-[10px] font-bold uppercase tracking-tight text-slate-700 border-b border-gray-300">
+                                    Observación
+                                </th>
+                                <th class="sticky top-0 z-40 bg-gray-200 px-4 py-2 text-[10px] font-bold uppercase tracking-tight text-slate-700 border-b border-gray-300 min-w-[150px]">
+                                    DOC
+                                </th>
+                                <th class="{% if modo_inicial == 'asignacion' %}hidden{% endif %} sticky top-0 z-40 bg-gray-200 px-4 py-2 text-[10px] w-12 text-center border-b border-gray-300">
+                                    Acción
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white">
+                            {% if unidades %}
+                                {% for item in unidades %}
+                                    <tr
+                                        class="hover:bg-indigo-100/100 transition-colors group
+                                            {% if modo_inicial == 'gestion' %}cursor-pointer{% endif %}"
+                                        {% if modo_inicial == 'gestion' %}
+                                            data-href="{% url 'editar_unidad' item.id_unidad ccpp.id_ccpp %}"
+                                        {% endif %}
+                                    >
+                                        {% if modo_inicial == 'asignacion' %}
+                                        <td class="sticky left-0 z-30 bg-white group-hover:bg-indigo-50/50 px-3 py-2 border-b border-gray-200 text-center transition-colors">
+                                            <input type="checkbox" name="unidades_seleccionadas" value="{{ item.id_unidad }}"
+                                                {% if item.id_unidad in ids_unidades_asignadas %} checked {% endif %}
+                                                class="unit-checkbox w-3.5 h-3.5 text-indigo-600 rounded focus:ring-indigo-500 cursor-pointer">
+                                        </td>
+                                        {% endif %}
+
+                                        <td class="p-0 border-b border-gray-200 transition-colors">
+                                            <div class="px-4 py-2 font-medium transition-colors
+                                                        {% if modo_inicial == 'gestion' %}text-indigo-600{% else %}text-slate-800{% endif %}">
+                                                {{ item.unidad }}
+                                            </div>
+                                        </td>
+
+                                        <td class="p-0 border-b border-gray-200 text-slate-600">
+                                            <div class="block px-4 py-2">
+                                                {{ item.capitulo }}
+                                            </div>
+                                        </td>
+
+                                        <td class="p-0 border-b border-gray-200 text-slate-600 max-w-xs">
+                                            <div class="block px-4 py-2 truncate">
+                                                {{ item.descripcion }}
+                                            </div>
+                                        </td>
+
+                                        <td class="p-0 border-b border-gray-200 text-slate-500">
+                                            <div class="block px-4 py-2">
+                                                {{ item.observacion|default:"-" }}
+                                            </div>
+                                        </td>
+
+                                        <td class="p-0 border-b border-gray-200 font-mono text-indigo-600">
+                                            <div class="block px-4 py-2 tracking-widest font-bold">
+                                                {% if item.doc|stringformat:"s"|length == 6 %}
+                                                    {{ item.doc|stringformat:"s"|slice:":2" }} {{ item.doc|stringformat:"s"|slice:"2:4" }} {{ item.doc|stringformat:"s"|slice:"4:6" }}
+                                                {% else %}
+                                                    {{ item.doc|default:"-" }}
+                                                {% endif %}
+                                            </div>
+                                        </td>
+
+                                        <td class="{% if modo_inicial == 'asignacion' %}hidden{% endif %} px-4 py-2 border-b border-gray-200">
+                                            <div class="flex items-center justify-center gap-3">
+                                                <a href="{% url 'panel_fichas' ccpp.id_ccpp item.id_unidad 1 %}" 
+                                                class="group flex items-center justify-center w-6 h-6 text-slate-400 hover:text-emerald-500 transition-all duration-200" 
+                                                title="Fichas">
+                                                    <span class="text-[13px] font-bold font-sans group-hover:scale-110 transition-transform">F</span>
+                                                </a>
+                                                <button 
+                                                    type="button"
+                                                    onclick="openDeleteModal('{{ item.id_unidad }}', '{{ item.unidad|escapejs }}')"
+                                                    class="group flex items-center justify-center w-6 h-6 text-slate-400 hover:text-rose-500 transition-all"
+                                                    title="Eliminar unidad">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr class="no-records">
+                                    <td colspan="7" class="py-10 text-center text-gray-400 italic border-b border-gray-200">
+                                        No hay registros.
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                        <tfoot class="sticky bottom-0 z-50 bg-gray-100 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
+                            <tr>
+                                {% with total_cols_fijas=6 %}
+                                <td colspan="{{ lista_meses|length|add:total_cols_fijas }}" 
+                                    class="border-t border-gray-300 px-4 py-2 text-left">
+                                    <div class="flex items-center gap-6 text-[11px]">
+                                        <span class="font-bold text-gray-700 uppercase tracking-wider">
+                                            Resumen General
+                                        </span>
+                                        <span class="text-gray-600">
+                                            Total de unidades: 
+                                            <strong class="text-indigo-400">{{ total_unidades }}</strong>
+                                        </span>
+                                        <span class="text-gray-600">
+                                            Total de Asignadas: 
+                                            <strong class="text-indigo-400">{{ total_unidades_asignadas }}</strong>
+                                        </span>
+                                    </div>
+                                </td>
+                                {% endwith %}
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+
+            {% if modo_inicial == 'asignacion' %}
+            </form>
+            {% else %}
+            </div>
+            {% endif %}
+        </section>
+    </main>
+</div>
+
+<!-- Modal de eliminación -->
+<div id="delete-modal" class="fixed inset-0 z-[100] flex items-center justify-center p-4 hidden">
+    <div class="absolute inset-0 bg-slate-900/70 backdrop-blur-sm" onclick="closeDeleteModal()"></div>
+    
+    <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm">
+        <div class="p-6">
+            <div class="flex items-center justify-center w-12 h-12 mx-auto mb-3 bg-red-50 rounded-xl">
+                <svg class="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.394 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+            </div>
+            
+            <div class="text-center">
+                <h3 class="text-base font-bold text-slate-800 mb-2">Confirmar Eliminación</h3>
+                <p class="text-xs text-slate-600 mb-4">
+                    ¿Está seguro que desea eliminar la unidad: 
+                    <span class="font-semibold text-red-600" id="unidad-name">{{ unidad_val|default:'' }}</span>?
+                    <br>
+                    <span class="text-xs text-red-500 font-medium">Esta acción es permanente y no se puede deshacer.</span>
+                </p>
+            </div>
+        </div>
+        
+        <div class="flex border-t border-slate-100 p-4">
+            <button type="button" id="confirm-delete-button" onclick="document.getElementById('delete-unidad-form').submit();"
+                    class="flex-1 px-3 py-1.5 bg-red-600 text-white text-xs font-medium rounded-lg hover:bg-red-700 transition-colors">
+                Eliminar
+            </button>
+            <button type="button" id="cancel-delete-button" onclick="closeDeleteModal()"
+                    class="flex-1 px-3 py-1.5 bg-white text-slate-700 text-xs font-medium rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors ml-2">
+                Cancelar
+            </button>
+        </div>
+    </div>
+</div>
+
+<form method="POST" id="delete-unidad-form" class="hidden">
+    {% csrf_token %}
+</form>
+
+<!-- Modal Editar Capítulo -->
+<div id="edit-capitulo-modal" class="fixed inset-0 z-[120] hidden flex items-center justify-center p-4">
+    <div class="absolute inset-0 bg-slate-900/70 backdrop-blur-sm" onclick="closeEditCapituloModal()"></div>
+
+    <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-md">
+        <form method="POST" id="edit-capitulo-form">
+            {% csrf_token %}
+
+            <div class="p-6">
+                <h3 class="text-sm font-bold text-slate-800 mb-4">
+                    Editar Capítulo
+                </h3>
+
+                <input type="hidden" name="capitulo_original" id="capitulo-original">
+
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">
+                        Nuevo nombre del capítulo
+                    </label>
+                    <input
+                        type="text"
+                        name="nuevo_capitulo"
+                        id="nuevo-capitulo"
+                        required
+                        class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-1 focus:ring-indigo-200 focus:border-indigo-200 outline-none">
+                </div>
+
+                <p class="mt-3 text-[11px] text-slate-500">
+                    ⚠️ Este cambio se aplicará a <strong>todas las unidades</strong> con este capítulo.
+                </p>
+            </div>
+
+            <div class="flex gap-2 border-t border-slate-100 p-4">
+                <button type="submit"
+                        class="flex-1 bg-indigo-600 text-white text-xs font-medium py-2 rounded-lg hover:bg-indigo-700 transition">
+                    Guardar cambios
+                </button>
+                <button type="button"
+                        onclick="closeEditCapituloModal()"
+                        class="flex-1 border border-slate-200 text-slate-700 text-xs font-medium py-2 rounded-lg hover:bg-slate-50 transition">
+                    Cancelar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="sidebar-overlay"
+     class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-40 hidden md:hidden">
+</div>
+
+<script>
+document.querySelectorAll('.modo-radio').forEach(radio => {
+    radio.addEventListener('change', function() {
+        if (this.checked) {
+            window.location.href = this.getAttribute('data-url');
+        }
+    });
+});
+
+const sidebar = document.getElementById('sidebar-principal');
+const overlay = document.getElementById('sidebar-overlay');
+const toggleBtn = document.getElementById('btn-toggle-sidebar');
+
+function openSidebar() {
+    sidebar.classList.remove('-translate-x-full');
+    overlay.classList.remove('hidden');
+    document.body.classList.add('overflow-hidden');
+}
+
+function closeSidebar() {
+    sidebar.classList.add('-translate-x-full');
+    overlay.classList.add('hidden');
+    document.body.classList.remove('overflow-hidden');
+}
+
+if (toggleBtn) {
+    toggleBtn.addEventListener('click', () => {
+        sidebar.classList.contains('-translate-x-full')
+            ? openSidebar()
+            : closeSidebar();
+    });
+}
+
+if (overlay) {
+    overlay.addEventListener('click', closeSidebar);
+}
+
+function openEditCapituloModal(capitulo) {
+    document.getElementById('capitulo-original').value = capitulo;
+    document.getElementById('nuevo-capitulo').value = capitulo;
+
+    const form = document.getElementById('edit-capitulo-form');
+    form.action = `/capitulos/editar/{{ ccpp.id_ccpp }}/`;
+
+    document.getElementById('edit-capitulo-modal').classList.remove('hidden');
+    document.body.classList.add('overflow-hidden');
+}
+
+function closeEditCapituloModal() {
+    document.getElementById('edit-capitulo-modal').classList.add('hidden');
+    document.body.classList.remove('overflow-hidden');
+}
+
+function openDeleteModal(unidadId, unidadName) {
+    const unidadNameElement = document.getElementById('unidad-name');
+    if (unidadNameElement) {
+        unidadNameElement.textContent = unidadName || 'esta unidad';
+    }
+
+    const form = document.getElementById('delete-unidad-form');
+    form.action = `/unidades/eliminar/${unidadId}/{{ ccpp.id_ccpp }}/`;
+
+    const modal = document.getElementById('delete-modal');
+    modal.classList.remove('hidden');
+    document.body.classList.add('overflow-hidden');
+
+    document.getElementById('cancel-delete-button').focus();
+}
+
+function closeDeleteModal() {
+    const modal = document.getElementById('delete-modal');
+    modal.classList.add('hidden');
+    document.body.classList.remove('overflow-hidden');
+}
+
+function normalizarTexto(texto) {
+    return texto
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9\s]/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('tr[data-href]').forEach(row => {
+        row.addEventListener('click', (e) => {
+            if (
+                e.target.closest('button') ||
+                e.target.closest('a') ||
+                e.target.closest('svg')
+            ) return;
+
+            window.location.href = row.dataset.href;
+        });
+    });
+
+    /* ===============================
+       === SELECTORES DE ELEMENTOS ===
+       =============================== */
+    const filterInput    = document.getElementById('filter-doc');
+    const filterGlobal   = document.getElementById('filter-global');
+    const filterStatus   = document.getElementById('filter-status');
+    const sortSelect     = document.getElementById('sort-select');
+    const btnReset       = document.getElementById('btn-reset-filters');
+    const selectAllCheckbox = document.getElementById('select-all-units');
+    const tableBody      = document.querySelector('tbody');
+    const rows           = Array.from(tableBody.querySelectorAll('tr:not(.no-records)'));
+    const enlacesCapitulos = document.querySelectorAll('nav a[href="#"]');
+
+    /* ===============================
+       === CONFIGURACIÓN INICIAL SORT ===
+       =============================== */
+    if (sortSelect && !sortSelect.querySelector('option[value=""]')) {
+        const defaultOpt = document.createElement('option');
+        defaultOpt.value = "";
+        defaultOpt.text = "Ordenar por...";
+        defaultOpt.selected = true;
+        sortSelect.prepend(defaultOpt);
+    }
+
+    /* ===============================
+       === VARIABLES DE ESTADO ===
+       =============================== */
+    let capituloSeleccionado = null;
+
+    /* ===============================
+       === RESTAURAR FILTRO CAPÍTULO ===
+       =============================== */
+    const capituloGuardado = localStorage.getItem('filtroCapitulo');
+
+    if (capituloGuardado) {
+        capituloSeleccionado = capituloGuardado;
+
+        enlacesCapitulos.forEach(enlace => {
+            const nombreCap = enlace.querySelector('span')?.textContent.trim();
+            if (nombreCap === capituloGuardado) {
+                enlace.classList.add('bg-indigo-100', 'text-indigo-700');
+            }
+        });
+
+        ejecutarFiltro();
+    }
+
+    /* ===============================
+       === 1. SELECCIÓN MASIVA ===
+       =============================== */
+    if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('change', function() {
+            rows.forEach(row => {
+                if (row.style.display !== 'none') {
+                    const cb = row.querySelector('.unit-checkbox');
+                    if (cb) cb.checked = selectAllCheckbox.checked;
+                }
+            });
+            if (filterStatus && filterStatus.value !== 'todos') ejecutarFiltro();
+        });
+    }
+
+    /* ===============================
+       === 2. FILTRO POR CAPÍTULO ===
+       =============================== */
+    enlacesCapitulos.forEach(enlace => {
+        enlace.addEventListener('click', function (e) {
+            e.preventDefault();
+
+            const esTodos = this.dataset.capitulo === "__ALL__";
+            const nombreCap = this.querySelector('span').textContent.trim();
+
+            enlacesCapitulos.forEach(el =>
+                el.classList.remove('bg-indigo-100', 'text-indigo-700')
+            );
+
+            if (esTodos) {
+                capituloSeleccionado = null;
+                localStorage.removeItem('filtroCapitulo');
+            } else {
+                capituloSeleccionado = nombreCap;
+                localStorage.setItem('filtroCapitulo', nombreCap);
+            }
+
+            this.classList.add('bg-indigo-100', 'text-indigo-700');
+            ejecutarFiltro();
+        });
+    });
+
+    /* ===============================
+       === 3. FORMATO INPUT DOC ===
+       =============================== */
+    if (filterInput) {
+        filterInput.addEventListener('input', function() {
+            let value = this.value.replace(/\D/g, '').slice(0, 6);
+            let formattedValue = "";
+            for (let i = 0; i < value.length; i++) {
+                if (i > 0 && i % 2 === 0) formattedValue += " ";
+                formattedValue += value[i];
+            }
+            this.value = formattedValue;
+            ejecutarFiltro();
+        });
+    }
+
+    /* ===============================
+       === 4. BUSCADOR GLOBAL ===
+       =============================== */
+    if (filterGlobal) {
+        filterGlobal.addEventListener('input', ejecutarFiltro);
+    }
+
+    /* ===============================
+       === 5. FILTRO ESTADO & RESET ===
+       =============================== */
+    if (filterStatus) filterStatus.addEventListener('change', ejecutarFiltro);
+
+    if (btnReset) {
+        btnReset.addEventListener('click', function() {
+            if (filterInput)  filterInput.value  = '';
+            if (filterGlobal) filterGlobal.value = '';
+            if (filterStatus) filterStatus.value = 'todos';
+            if (sortSelect)   sortSelect.value   = "";
+
+            capituloSeleccionado = null;
+            enlacesCapitulos.forEach(el =>
+                el.classList.remove('bg-indigo-100', 'text-indigo-700')
+            );
+
+            ejecutarFiltro();
+        });
+    }
+
+    /* ===============================
+       === 6. FUNCIÓN MAESTRA FILTRO ===
+       =============================== */
+    function ejecutarFiltro() {
+        const termDoc = filterInput
+            ? normalizarTexto(filterInput.value.replace(/\s/g, ''))
+            : "";
+
+        const termGlobal = filterGlobal
+            ? normalizarTexto(filterGlobal.value)
+            : "";
+
+        const statusVal = filterStatus ? filterStatus.value : 'todos';
+
+        rows.forEach(row => {
+            const esModoAsignacion = row.querySelector('.unit-checkbox') !== null;
+
+            const textoFila  = normalizarTexto(row.textContent);
+
+            const indexCap   = esModoAsignacion ? 3 : 2;
+            const textCapRow = normalizarTexto(
+                row.querySelector(`td:nth-child(${indexCap})`).textContent
+            );
+
+            const textDocRow = normalizarTexto(
+                row.querySelector('td:nth-last-child(2)').textContent.replace(/\s/g, '')
+            );
+
+            const checkbox     = row.querySelector('.unit-checkbox');
+            const estaAsignada = checkbox ? checkbox.checked : false;
+
+            const coincideDoc = !termDoc || textDocRow.includes(termDoc);
+
+            const coincideCap = termGlobal
+                ? true
+                : !capituloSeleccionado || textCapRow === normalizarTexto(capituloSeleccionado);
+
+            let coincideEstado = true;
+            if (statusVal === 'asignadas')    coincideEstado = estaAsignada;
+            if (statusVal === 'no-asignadas') coincideEstado = !estaAsignada;
+
+            const coincideGlobal = !termGlobal || textoFila.includes(termGlobal);
+
+            row.style.display =
+                coincideDoc && coincideCap && coincideEstado && coincideGlobal
+                    ? ""
+                    : "none";
+        });
+
+        actualizarMensajeVacio();
+    }
+
+    /* ===============================
+       === 7. ORDENAMIENTO ===
+       =============================== */
+    if (sortSelect) {
+        sortSelect.addEventListener('change', function() {
+            const criteria = this.value;
+            if (criteria === "") return;
+
+            const sortedRows = rows.sort((a, b) => {
+                const esAsignA = a.querySelector('.unit-checkbox') !== null;
+                const esAsignB = b.querySelector('.unit-checkbox') !== null;
+                let valA, valB;
+
+                if (criteria === 'capitulo') {
+                    valA = a.querySelector(`td:nth-child(${esAsignA ? 3 : 2})`).textContent.trim();
+                    valB = b.querySelector(`td:nth-child(${esAsignB ? 3 : 2})`).textContent.trim();
+                } else if (criteria === 'unidad') {
+                    valA = a.querySelector(`td:nth-child(${esAsignA ? 2 : 1})`).textContent.trim();
+                    valB = b.querySelector(`td:nth-child(${esAsignB ? 2 : 1})`).textContent.trim();
+                } else if (criteria === 'doc') {
+                    valA = parseInt(a.querySelector('td:nth-last-child(2)').textContent.replace(/\s/g, '')) || 0;
+                    valB = parseInt(b.querySelector('td:nth-last-child(2)').textContent.replace(/\s/g, '')) || 0;
+                    return valA - valB;
+                }
+
+                return valA.localeCompare(valB, undefined, {
+                    numeric: true,
+                    sensitivity: 'base'
+                });
+            });
+
+            sortedRows.forEach(row => tableBody.appendChild(row));
+        });
+    }
+
+    /* ===============================
+       === 8. MENSAJE SIN RESULTADOS ===
+       =============================== */
+    function actualizarMensajeVacio() {
+        const visibles = rows.filter(r => r.style.display !== "none").length;
+        let msgRow = tableBody.querySelector('.no-results-msg');
+
+        if (visibles === 0) {
+            if (!msgRow) {
+                tableBody.insertAdjacentHTML('beforeend', `
+                    <tr class="no-results-msg">
+                        <td colspan="100%" class="py-10 text-center text-slate-400 italic bg-white">
+                            No se encontraron unidades con los filtros aplicados.
+                        </td>
+                    </tr>
+                `);
+            }
+        } else if (msgRow) {
+            msgRow.remove();
+        }
+    }
+});
+</script>
+</body>
+</html>

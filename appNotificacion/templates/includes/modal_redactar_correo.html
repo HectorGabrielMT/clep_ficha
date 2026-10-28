@@ -1,0 +1,346 @@
+<div id="ventana-correo" 
+     class="fixed z-[9999] bg-white shadow-[0_-5px_25px_-5px_rgba(0,0,0,0.1)] flex flex-col transition-all duration-300 ease-in-out translate-y-full opacity-0 hidden
+            w-full h-full inset-0 md:w-[550px] md:h-[580px] md:inset-auto md:bottom-0 md:right-20 
+            md:rounded-t-2xl border border-gray-300 font-sans">
+
+    <div id="modal-exito" class="absolute inset-0 z-[200] bg-white flex flex-col items-center justify-center hidden opacity-0 transition-all duration-500 ease-out md:rounded-t-2xl">
+        <div class="flex flex-col items-center transform translate-y-4 transition-transform duration-500 ease-out" id="contenedor-exito-animacion">
+            <svg class="w-12 h-12 text-gray-800 mb-4 stroke-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
+            </svg>
+            <p class="text-gray-900 font-medium text-base text-center tracking-wide px-4">
+                Correo enviado con éxito
+            </p>
+            <p class="text-xs text-gray-400 mt-1 font-normal">
+                Actualizando la plataforma...
+            </p>
+        </div>
+    </div>
+
+    <div id="modal-cargando" class="absolute inset-0 z-[100] flex items-center justify-center bg-white/90 md:rounded-t-2xl hidden transition-opacity duration-200 opacity-0">
+        <div class="flex items-center gap-3">
+            <div class="w-3 h-3 rounded-full bg-gray-400 animate-pulse"></div>
+            <span class="text-xs text-gray-500 tracking-wide select-none">Cargando plantilla...</span>
+        </div>
+    </div>
+    
+    <div class="bg-[#202124] text-white flex justify-between items-center px-4 py-2 shrink-0 md:rounded-t-2xl">
+        <div class="flex items-center gap-2">
+            <svg class="w-5 h-5 text-gray-200" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M20 4H4C2.9 4 2.01 4.9 2.01 6L2 18C2 19.1 2.9 20 4 20H20C21.1 20 22 19.1 22 18V6C22 4.9 21.1 4 20 4ZM20 8L12 13L4 8V6L12 11L20 6V8Z"/>
+            </svg>
+            <span class="text-sm font-medium tracking-wide">Correo electrónico</span>
+        </div>
+        <div class="flex items-center gap-1">
+            <button type="button" onclick="GestorCorreo.alternarMaximizar()" class="hover:bg-white/10 p-1.5 rounded-full text-gray-300 transition-colors">
+                <svg id="icono-maximizar" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
+                <svg id="icono-restaurar" class="w-4 h-4 hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/></svg>
+            </button>
+            <button type="button" onclick="GestorCorreo.cerrar()" class="hover:bg-white/10 p-1.5 rounded-full text-gray-300 transition-colors">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+            </button>
+        </div>
+    </div>
+
+    <form id="formulario-correo" method="POST" action="{% url 'enviar_correo' %}" enctype="multipart/form-data" class="flex flex-col flex-1 overflow-hidden">
+        {% csrf_token %}
+        <input type="hidden" name="notificacion_id" id="correo-notificacion-id" value="{{ notificacion.id_notificacion|default:'' }}">
+
+
+        <input type="hidden" name="notificacion_id" id="correo-notificacion-id" value="{{ notificacion.id_notificacion|default:'' }}">
+        <input type="hidden" name="id_ccpp" id="correo-id-ccpp" value="">
+        <input type="hidden" name="id_unidad" id="correo-id-unidad" value="">
+        <input type="hidden" name="anio" id="correo-anio" value="">
+        <input type="hidden" name="mes" id="correo-mes" value="">
+
+
+        <div class="flex flex-col shrink-0 px-4 pt-2">
+            <div class="flex border-b border-gray-200 py-1 items-center">
+                <span class="text-gray-500 text-sm w-12 font-medium">Para</span>
+                <input type="text" id="correo-para" name="to" class="flex-1 outline-none text-sm text-gray-800 py-1 bg-transparent" required>
+            </div>
+            <div class="flex border-b border-gray-200 py-1 items-center">
+                <span class="text-gray-500 text-sm w-12 font-medium">Cc</span>
+                <input type="text" id="correo-cc" name="cc" class="flex-1 outline-none text-sm text-gray-800 py-1 bg-transparent">
+            </div>
+            <div class="flex border-b border-gray-200 py-1 items-center">
+                <span class="text-gray-500 text-sm w-12 font-medium">Cco</span>
+                <input type="text" id="correo-cco" name="bcc" class="flex-1 outline-none text-sm text-gray-800 py-1 bg-transparent">
+            </div>
+            <div class="border-b border-gray-200 py-1">
+                <input type="text" id="correo-asunto" name="subject" placeholder="Asunto" class="w-full outline-none text-sm font-medium placeholder-gray-500 py-1 bg-transparent">
+            </div>
+        </div>
+
+        <textarea id="correo-cuerpo" name="body" class="flex-1 w-full p-4 resize-none outline-none text-sm text-gray-800 leading-relaxed overflow-y-auto bg-transparent" placeholder="Escribe tu mensaje..."></textarea>
+
+        <div id="area-adjuntos" class="px-4 py-2 flex flex-wrap gap-2 overflow-y-auto max-h-32 shrink-0 empty:hidden"></div>
+
+        <div class="p-3 flex items-center justify-between shrink-0 bg-gray-50 border-t border-gray-200">
+            <div class="flex items-center gap-4">
+                <button id="btn-enviar" type="submit"
+                        class="bg-[#0B57D0] hover:bg-[#0946a8] text-white px-6 py-2 rounded-full text-sm font-bold transition-colors shadow-sm disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center min-w-[100px]">
+                    Enviar
+                </button>
+
+                <input type="file" id="input-archivo" name="attachments" class="hidden" multiple onchange="GestorCorreo.manejarArchivos(this.files)">
+                <button type="button" onclick="document.getElementById('input-archivo').click()" class="p-2 hover:bg-gray-200 rounded-full text-gray-600 transition-colors" title="Adjuntar archivos">
+                    <svg class="w-5 h-5 transform rotate-45" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path></svg>
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+const GestorCorreo = {
+    estaMaximizado: false,
+    archivos: [],
+    // Altura óptima md:h-[580px]
+    clasesNormales: ['md:w-[550px]', 'md:h-[580px]', 'md:bottom-0', 'md:right-20', 'md:rounded-t-2xl'],
+    clasesCompletas: ['md:inset-10', 'md:rounded-2xl', 'md:w-auto', 'md:h-auto'],
+
+    abrir: async function(idCCPP, idUnidad, idInspeccion, idNotificacion = null, anio = null, mes = null) {
+        if (!idCCPP || !idUnidad || !idInspeccion) {
+            console.error("Faltan parámetros obligatorios para abrir el redactor.");
+            return;
+        }
+
+        const ventana = document.getElementById('ventana-correo');
+        const cargador = document.getElementById('modal-cargando');
+
+        this.archivos = [];
+        this.estaMaximizado = false;
+
+        ventana.classList.add(...this.clasesNormales);
+        ventana.classList.remove(...this.clasesCompletas);
+        document.getElementById('icono-maximizar').classList.remove('hidden');
+        document.getElementById('icono-restaurar').classList.add('hidden');
+        document.getElementById('area-adjuntos').innerHTML = '';
+
+        // NUEVO: sincroniza los identificadores que "enviar_correo" necesita
+        // para localizar (o crear) la notificación y marcarla como enviada.
+        document.getElementById('correo-notificacion-id').value = idNotificacion || '';
+        document.getElementById('correo-id-ccpp').value = idCCPP || '';
+        document.getElementById('correo-id-unidad').value = idUnidad || '';
+        document.getElementById('correo-anio').value = (anio !== null && anio !== undefined) ? anio : '';
+        document.getElementById('correo-mes').value = mes || '';
+
+        ventana.classList.remove('hidden');
+        setTimeout(() => {
+            ventana.classList.remove('translate-y-full', 'opacity-0');
+            ventana.classList.add('translate-y-0', 'opacity-100');
+        }, 10);
+
+        cargador.classList.remove('hidden');
+        setTimeout(() => cargador.classList.remove('opacity-0'), 10);
+
+        const obtenerCorreos = (nombre) => {
+            return Array.from(document.querySelectorAll(`input[name="${nombre}"]:checked`))
+                .map(cb => cb.value)
+                .join(', ');
+        };
+
+        const params = new URLSearchParams({
+            id_ccpp: idCCPP,
+            id_unidad: idUnidad,
+            id_inspeccion: idInspeccion
+        });
+        if (idNotificacion) params.append('id_notificacion', idNotificacion);
+
+        try {
+            const respuesta = await fetch(`/get-email-template/?${params.toString()}`);
+            const data = await respuesta.json();
+
+            if (data.success) {
+                document.getElementById('correo-asunto').value = data.asunto || '';
+                document.getElementById('correo-cuerpo').value = data.cuerpo || '';
+                document.getElementById('correo-para').value = obtenerCorreos('para');
+                document.getElementById('correo-cc').value = obtenerCorreos('cc');
+                document.getElementById('correo-cco').value = obtenerCorreos('cco');
+
+                if (data.adjunto_auto) {
+                    this.agregarAdjuntoAutomatico(data.adjunto_auto);
+                }
+            } else {
+                alert(`Error al cargar plantilla: ${data.error}`);
+                this.cerrar();
+            }
+        } catch (error) {
+            console.error("Error al obtener la plantilla:", error);
+            alert("Ocurrió un error de conexión al cargar la plantilla.");
+            this.cerrar();
+        } finally {
+            cargador.classList.add('opacity-0');
+            setTimeout(() => cargador.classList.add('hidden'), 200);
+        }
+    },
+
+
+    agregarAdjuntoAutomatico: function(adjunto) {
+        try {
+            const byteCharacters = atob(adjunto.contenido);
+            const byteNumbers = new Uint8Array(byteCharacters.length);
+            
+            for (let i = 0; i < byteCharacters.length; i++) {
+                byteNumbers[i] = byteCharacters.charCodeAt(i);
+            }
+            
+            const blob = new Blob([byteNumbers], { type: adjunto.tipo });
+            const archivo = new File([blob], adjunto.nombre, { type: adjunto.tipo });
+            
+            this.archivos.push(archivo);
+            this.renderizarPildoraAdjunto(archivo, true);
+        } catch (error) {
+            console.error("Error al procesar el adjunto automático:", error);
+        }
+    },
+
+    manejarArchivos: function(archivosNuevos) {
+        Array.from(archivosNuevos).forEach(archivo => {
+            this.archivos.push(archivo);
+            this.renderizarPildoraAdjunto(archivo, false);
+        });
+        document.getElementById('input-archivo').value = ''; 
+    },
+
+    renderizarPildoraAdjunto: function(archivo, esAutomatico) {
+        const area = document.getElementById('area-adjuntos');
+        const urlArchivo = URL.createObjectURL(archivo);
+
+        const pildora = document.createElement('div');
+        pildora.className = "flex items-center gap-2 bg-gray-100 hover:bg-gray-200 border border-gray-200 rounded-full px-4 py-1.5 max-w-[220px] transition-colors shadow-sm";
+
+        pildora.innerHTML = `
+            <svg class="w-3.5 h-3.5 text-gray-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path></svg>
+            <a href="${urlArchivo}" target="_blank" class="text-xs text-gray-700 font-medium truncate flex-1 hover:text-[#0B57D0] transition-colors">${archivo.name}</a>
+            <button type="button" class="text-gray-400 hover:text-red-600 shrink-0 transition-colors focus:outline-none bg-transparent rounded-full p-0.5">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+            ${esAutomatico ? `<input type="hidden" name="adjuntos_automaticos" value="${archivo.name}">` : ''}
+        `;
+
+        pildora.querySelector('button').onclick = () => {
+            this.archivos = this.archivos.filter(a => a.name !== archivo.name);
+            URL.revokeObjectURL(urlArchivo);
+            pildora.remove();
+        };
+
+        area.appendChild(pildora);
+    },
+
+    cerrar: function() {
+        const ventana = document.getElementById('ventana-correo');
+        const modalExito = document.getElementById('modal-exito');
+        const contenedorAnimacion = document.getElementById('contenedor-exito-animacion');
+        
+        ventana.classList.remove('translate-y-0', 'opacity-100');
+        ventana.classList.add('translate-y-full', 'opacity-0');
+        
+        setTimeout(() => {
+            ventana.classList.add('hidden');
+            document.getElementById('formulario-correo').reset();
+            document.getElementById('area-adjuntos').innerHTML = '';
+            
+            modalExito.classList.add('hidden', 'opacity-0');
+            modalExito.classList.remove('opacity-100');
+            contenedorAnimacion.classList.add('translate-y-4');
+            
+            this.archivos = [];
+        }, 300);
+    },
+
+    alternarMaximizar: function() {
+        this.estaMaximizado = !this.estaMaximizado;
+        const ventana = document.getElementById('ventana-correo');
+        const iconoMax = document.getElementById('icono-maximizar');
+        const iconoRest = document.getElementById('icono-restaurar');
+
+        if (this.estaMaximizado) {
+            ventana.classList.remove(...this.clasesNormales);
+            ventana.classList.add(...this.clasesCompletas);
+            iconoMax.classList.add('hidden');
+            iconoRest.classList.remove('hidden');
+        } else {
+            ventana.classList.add(...this.clasesNormales);
+            ventana.classList.remove(...this.clasesCompletas);
+            iconoMax.classList.remove('hidden');
+            iconoRest.classList.add('hidden');
+        }
+    }
+};
+
+/* =========================
+   Manejador AJAX del Formulario
+========================= */
+document.getElementById('formulario-correo').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    const form = this;
+    const btn = document.getElementById('btn-enviar');
+    const modalExito = document.getElementById('modal-exito');
+    const contenedorAnimacion = document.getElementById('contenedor-exito-animacion');
+    const textoOriginal = btn.innerHTML;
+
+    btn.disabled = true;
+    btn.innerHTML = `
+        <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        Enviando...
+    `;
+
+    const formData = new FormData(form);
+    formData.delete('attachments'); 
+    
+    GestorCorreo.archivos.forEach(archivo => {
+        formData.append('attachments', archivo);
+    });
+
+    try {
+        const respuesta = await fetch(form.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest' 
+            }
+        });
+        
+        const data = await respuesta.json();
+
+        if (data.success) {
+            // Activar modal de éxito con transiciones limpias y fluidas
+            modalExito.classList.remove('hidden');
+            
+            setTimeout(() => {
+                modalExito.classList.remove('opacity-0');
+                modalExito.classList.add('opacity-100');
+                // Desplazamiento sutil hacia arriba para denotar el envío
+                contenedorAnimacion.classList.remove('translate-y-4');
+                contenedorAnimacion.classList.add('translate-y-0');
+            }, 50);
+
+            setTimeout(() => {
+                const formRespuesta = document.getElementById('form-respuesta');
+                if (formRespuesta) {
+                    formRespuesta.submit();
+                } else {
+                    window.location.reload(); 
+                }
+            }, 2200);
+            
+        } else {
+            alert(data.error || 'Ocurrió un error al enviar el correo.');
+            btn.innerHTML = textoOriginal;
+            btn.disabled = false;
+        }
+
+    } catch (error) {
+        console.error('Error en la petición POST:', error);
+        alert('Error de conexión con el servidor.');
+        btn.innerHTML = textoOriginal;
+        btn.disabled = false;
+    }
+});
+</script>

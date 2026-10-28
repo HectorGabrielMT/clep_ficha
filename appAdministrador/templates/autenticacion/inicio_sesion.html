@@ -1,0 +1,85 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clep</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" href="{% static 'img/icono.png' %}">
+</head>
+<body class="bg-[#DDE5FF] min-h-screen w-screen flex items-center justify-center p-4 antialiased font-['Plus_Jakarta_Sans']">
+    {% include 'base/mensajes.html' %}
+    
+<main class="bg-white w-full max-w-3xl md:h-[450px] rounded-[2rem] shadow-2xl shadow-blue-900/10 overflow-hidden flex flex-col md:flex-row">
+        
+        <!-- Se cambió bg-slate-900 por bg-white en este div -->
+<div class="w-full md:w-1/2 h-50 md:h-full bg-white overflow-hidden flex items-center justify-center p-4">
+    <img 
+        src="{% static 'img/login.png' %}" 
+        class="w-3/4 h-auto max-h-full object-contain" 
+        alt="Imagen de login">
+</div>
+
+        <div class="w-full md:w-1/2 flex flex-col justify-between p-6 md:p-8 space-y-6 md:space-y-0">
+            
+            <div class="flex flex-col items-center text-center">
+                <h1 class="text-xl md:text-2xl font-extrabold text-slate-900 tracking-tight leading-none">
+                    Autenticación
+                </h1>
+                <p class="text-slate-500 text-[10px] mt-1 font-medium">- CLEP -</p>
+            </div>
+
+            <form method="POST" action="{% url 'login' %}" class="space-y-3">
+                {% csrf_token %}
+                
+                <div class="space-y-1">
+                    <label class="text-[9px] font-extrabold text-slate-400 ml-1 uppercase tracking-widest">Usuario</label>
+                    <input type="text" name="usuario" autocomplete="off" id="id_usuario" value="{{ usuario_val|default:'' }}" 
+                        class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 focus:bg-white transition-all">
+                </div>
+
+                <div class="space-y-1">
+                    <label class="text-[9px] font-extrabold text-slate-400 ml-1 uppercase tracking-widest">Contraseña</label>
+                    <div class="relative">
+                        <input type="password" name="clave" id="id_password" 
+                            class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 focus:bg-white transition-all">
+                        <button type="button" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 hover:text-blue-500"
+                            onmousedown="togglePasswordVisibility(true)" onmouseup="togglePasswordVisibility(false)"
+                            ontouchstart="togglePasswordVisibility(true)" ontouchend="togglePasswordVisibility(false)">
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="pt-1">
+                    <button type="submit" class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-sm shadow-lg shadow-blue-200 transition-all active:scale-[0.98]">
+                        Entrar
+                    </button>
+                </div>
+
+                {% if errores %}
+                <div class="p-2 bg-red-50 border border-red-100 rounded-lg">
+                    <p class="text-[8px] text-red-600 text-center font-extrabold uppercase italic">Acceso Denegado</p>
+                </div>
+                {% endif %}
+            </form>
+
+            <footer class="text-center pt-4 md:pt-0">
+                <p class="text-[8px] text-slate-300 font-bold uppercase tracking-[0.4em]">© 2025 Clep</p>
+            </footer>
+        </div>
+    </main>
+
+    <script>
+        function togglePasswordVisibility(show) {
+            const passwordField = document.getElementById('id_password');
+            passwordField.type = show ? 'text' : 'password';
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,561 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clep - {% if editar %}Editar{% else %}Crear{% endif %} Usuario</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/estiloGlobal.css' %}">
+    <link rel="icon" type="image/png" href="{% static 'img/icono.png' %}">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Poppins', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-slate-50 font-sans antialiased text-slate-900">
+    {% include 'base/mensajes.html' %}
+
+    <div class="flex h-screen overflow-hidden">
+        
+        <!-- Sidebar principal -->
+        <aside id="sidebar-principal" class="fixed inset-y-0 left-0 w-64 bg-white shadow-xl flex flex-col z-50 border-r border-indigo-50 h-full flex-shrink-0 transition-transform duration-300 transform -translate-x-full lg:relative lg:translate-x-0">
+            <div class="p-4 border-b border-indigo-50 relative">
+                
+                <div class="absolute left-4 top-5">
+                    <a href="{% url 'panel_usuarios' %}" class="text-slate-400 hover:text-indigo-600 transition-colors flex items-center">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                        </svg>
+                    </a>
+                </div>
+
+                <div class="flex flex-col items-center">
+                    <a href="{% url 'panel_principal' %}" class="space-x-3">
+                        <div class="flex items-center gap-3">
+                            <div class="flex-shrink-0">
+                                <img src="{% static 'img/logo.png' %}" 
+                                    alt="Logo clep" 
+                                    class="w-32 h-16 object-contain drop-shadow-sm transition-transform duration-300 hover:scale-110">
+                            </div>
+                        </div>
+                    </a>
+                </div>
+                
+                <div class="absolute right-4 top-5 lg:hidden">
+                    <button onclick="alternarMenu()" class="p-2 text-slate-400 hover:text-red-500">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <nav class="flex-1 px-3 py-4 space-y-4 overflow-y-auto scrollIndependiente">
+                
+                <div class="bg-white rounded-xl border border-green-400 shadow-sm overflow-hidden">
+                    <div class="bg-slate-50 border-b border-slate-100 px-4 py-2.5 flex items-center">
+                        <div class="w-1 h-4 bg-green-500 rounded-full mr-2"></div>
+                        <p class="text-[11px] font-bold text-slate-700 uppercase tracking-wider">Acciones</p>
+                    </div>
+                    
+                    <div class="p-1.5 space-y-0.5">
+                        <button type="submit" form="form-usuario" 
+                                class="w-full group flex items-center px-3 py-2.5 text-slate-600 hover:bg-slate-100 rounded-md transition-all duration-200">
+                            <div class="p-1.5 rounded-lg bg-slate-50 group-hover:bg-white group-hover:shadow-sm transition-all mr-3">
+                                <svg class="w-4 h-4 text-slate-500 group-hover:text-slate-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path>
+                                </svg>
+                            </div>
+                            <span class="text-[13px] font-medium group-hover:text-slate-900">Guardar</span>
+                        </button>
+
+                        {% if editar and usuario %}
+                            <button type="button" onclick="mostrarModalEliminar('{{ usuario.username }}', '{{ usuario.id }}')" 
+                                    class="w-full group flex items-center px-3 py-2.5 text-red-500 hover:bg-red-50 rounded-md transition-all duration-200">
+                                <div class="p-1.5 rounded-lg bg-red-50/50 group-hover:bg-white group-hover:shadow-sm transition-all mr-3">
+                                    <svg class="w-4 h-4 text-red-400 group-hover:text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                    </svg>
+                                </div>
+                                <span class="text-[13px] font-medium group-hover:text-red-700">Eliminar</span>
+                            </button>
+                        {% endif %}
+                    </div>
+                </div>
+
+                {% if editar and usuario %}
+                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div class="bg-slate-50 border-b border-slate-100 px-4 py-2.5">
+                            <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Detalles del Perfil</p>
+                        </div>
+                        
+                        <div class="p-4">
+                            <div class="flex items-center gap-3 mb-4">
+                                <div class="w-10 h-10 flex-shrink-0 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-700 font-bold text-xs shadow-sm">
+                                    {{ usuario.username|slice:":2"|upper }}
+                                </div>
+                                <div class="overflow-hidden">
+                                    <span class="text-[13px] font-bold text-slate-900 block truncate">{{ usuario.username }}</span>
+                                    <div class="flex items-center gap-1.5 mt-0.5">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+                                        <span class="text-[10px] text-slate-500 uppercase font-semibold tracking-tight">Usuario Activo</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="space-y-2 border-t border-slate-50 pt-3">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-[11px] text-slate-400">Último acceso</span>
+                                    <span class="text-[11px] font-semibold text-slate-600 bg-slate-50 px-2 py-0.5 rounded-md">
+                                        {% if usuario.last_login %}{{ usuario.last_login|date:"d/m/Y" }}{% else %}Nunca{% endif %}
+                                    </span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-[11px] text-slate-400">Registro</span>
+                                    <span class="text-[11px] font-semibold text-slate-600 bg-slate-50 px-2 py-0.5 rounded-md">
+                                        {{ usuario.date_joined|date:"d/m/Y" }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+            </nav>
+
+            <div class="p-2 border-t border-indigo-50">
+                <div class="flex items-center p-1.5 space-x-2 bg-indigo-50/50 rounded">
+                    <div class="w-6 h-6 flex-shrink-0 rounded-full bg-indigo-600 flex items-center justify-center text-white font-bold text-[9px]">
+                        {% if user.first_name and user.last_name %}
+                            {{ user.first_name|slice:":1" }}{{ user.last_name|slice:":1" }}
+                        {% else %}
+                            {{ user.username|slice:":2"|upper }}
+                        {% endif %}
+                    </div>
+                    
+                    <div class="flex-1 min-w-0 leading-tight">
+                        <input 
+                            type="text" 
+                            value="{{ user.username }}" 
+                            readonly 
+                            class="input-invisible w-full bg-transparent border-none p-0 text-xs font-bold text-slate-900 focus:ring-0 cursor-default truncate"
+                            title="{{ user.username }}"
+                        >
+                        
+                        <input 
+                            type="email" 
+                            value="{{ user.email }}" 
+                            readonly 
+                            class="input-invisible w-full bg-transparent border-none p-0 text-[10px] text-indigo-500 focus:ring-0 cursor-default truncate block -mt-1"
+                            title="{{ user.email }}"
+                        >
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Contenido principal -->
+        <main class="flex-1 flex flex-col min-w-0 bg-slate-50">
+            <header class="h-16 bg-white border-b border-slate-100 flex items-center px-4 sm:px-6 justify-between flex-shrink-0">
+                <div class="flex items-center gap-4">
+                    <button type="button" onclick="alternarMenu()" 
+                            class="lg:hidden p-2 rounded-lg text-slate-500 hover:bg-slate-50 hover:text-indigo-600 transition-all border border-slate-100 shadow-sm">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 6h16M4 12h16M4 18h16"></path>
+                        </svg>
+                    </button>
+
+                    <div class="flex items-baseline gap-3">
+                        <h1 class="text-lg font-bold text-slate-800 tracking-tight leading-none">
+                            {% if editar %}Editar Usuario{% else %}Nuevo Usuario{% endif %}
+                        </h1>
+
+                        <nav class="hidden md:flex items-center text-xs font-medium">
+                            <span class="mx-1.5 text-slate-300">|</span>
+                            <div class="flex items-center gap-1.5">
+                                <a href="{% url 'panel_principal' %}" class="text-slate-400 hover:text-indigo-600 transition-colors">Inicio</a>
+
+                                <svg class="w-3.5 h-3.5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                </svg>
+
+                                <a href="{% url 'panel_usuarios' %}" class="text-slate-400 hover:text-indigo-600 transition-colors">Usuarios</a>
+
+                                <svg class="w-3.5 h-3.5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                </svg>
+
+                                <span class="text-indigo-600 font-semibold">
+                                    {% if editar %}Editar{% else %}Nuevo{% endif %}
+                                </span>
+                            </div>
+                        </nav>
+                    </div>
+                </div>
+            </header>
+
+            <section class="flex-1 overflow-y-auto px-4 pt-2 pb-4 sm:px-6">
+                <!-- Formulario único para crear y editar -->
+                {% if editar %}
+                <!-- Formulario para EDITAR usuario -->
+                <form id="form-usuario" method="POST" action="{% url 'editar_usuario' usuario.id %}" class="max-w-4xl mx-auto mt-2" novalidate>
+                {% else %}
+                <!-- Formulario para CREAR usuario -->
+                <form id="form-usuario" method="POST" action="{% url 'crear_usuario' %}" class="max-w-4xl mx-auto mt-2" novalidate>
+                {% endif %}
+                    {% csrf_token %}
+                    
+                    <!-- Información Personal -->
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-5 space-y-4">
+                        <h3 class="text-sm font-bold text-slate-800 mb-4 flex items-center">
+                            <svg class="w-3.5 h-3.5 mr-2 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                            </svg>
+                            Información Personal
+                        </h3>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-500 uppercase mb-1 ml-1">Nombre</label>
+                                <input type="text" name="first_name" value="{{ usuario.first_name|default:'' }}" 
+                                       class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:ring-1 focus:ring-indigo-100 outline-none text-sm">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold text-slate-500 uppercase mb-1 ml-1">Apellido</label>
+                                <input type="text" name="last_name" value="{{ usuario.last_name|default:'' }}" 
+                                       class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:ring-1 focus:ring-indigo-100 outline-none text-sm">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold text-slate-500 uppercase mb-1 ml-1">Nombre de Usuario *</label>
+                                <input type="text" name="username" value="{{ usuario.username|default:'' }}" 
+                                       class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:ring-1 focus:ring-indigo-100 outline-none text-sm"
+                                       maxlength="10"
+                                       >
+                                <p class="text-xs text-slate-400 mt-1">Máximo 10 caracteres</p>
+                                {% if errores.username %}
+                                <p class="text-red-500 text-xs mt-1">{{ errores.username }}</p>
+                                {% endif %}
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold text-slate-500 uppercase mb-1 ml-1">Correo Electrónico</label>
+                                <input type="email" name="email" value="{{ usuario.email|default:'' }}" 
+                                       class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:ring-1 focus:ring-indigo-100 outline-none text-sm">
+                                {% if errores.email %}
+                                <p class="text-red-500 text-xs mt-1">{{ errores.email }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Seguridad y Permisos -->
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-5 space-y-4 mt-4">
+                        <h3 class="text-sm font-bold text-slate-800 mb-4 flex items-center">
+                            <svg class="w-3.5 h-3.5 mr-2 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                            </svg>
+                            Seguridad y Permisos
+                        </h3>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="md:col-span-2">
+                                <label class="block text-xs font-bold text-slate-500 uppercase mb-1 ml-1">Rol del Usuario</label>
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-2.5 mt-2">
+                                    <label class="flex items-center p-3 rounded-lg border border-slate-100 hover:border-indigo-100 hover:bg-indigo-50/30 transition-all cursor-pointer group">
+                                        <input type="radio" name="rol" value="observador" 
+                                               {% if not usuario.is_staff and not usuario.is_superuser %}checked{% endif %}
+                                               class="w-3.5 h-3.5 text-indigo-600 border-slate-300 focus:ring-indigo-500"
+                                               id="rol-observador">
+                                        <div class="ml-3">
+                                            <span class="block text-xs font-medium text-slate-700">Observador</span>
+                                            <span class="block text-xs text-slate-400 mt-1">Acceso básico al sistema</span>
+                                        </div>
+                                    </label>
+
+                                    <label class="flex items-center p-3 rounded-lg border border-slate-100 hover:border-indigo-100 hover:bg-indigo-50/30 transition-all cursor-pointer group">
+                                        <input type="radio" name="rol" value="supervisor" 
+                                               {% if usuario.is_staff and not usuario.is_superuser %}checked{% endif %}
+                                               class="w-3.5 h-3.5 text-indigo-600 border-slate-300 focus:ring-indigo-500"
+                                               id="rol-supervisor">
+                                        <div class="ml-3">
+                                            <span class="block text-xs font-medium text-slate-700">Supervisor</span>
+                                            <span class="block text-xs text-slate-400 mt-1">Gestiona inspecciones</span>
+                                        </div>
+                                    </label>
+
+                                    <label class="flex items-center p-3 rounded-lg border border-slate-100 hover:border-indigo-100 hover:bg-indigo-50/30 transition-all cursor-pointer group">
+                                        <input type="radio" name="rol" value="admin" 
+                                               {% if usuario.is_superuser %}checked{% endif %}
+                                               class="w-3.5 h-3.5 text-indigo-600 border-slate-300 focus:ring-indigo-500"
+                                               id="rol-admin">
+                                        <div class="ml-3">
+                                            <span class="block text-xs font-medium text-slate-700">Administrador</span>
+                                            <span class="block text-xs text-slate-400 mt-1">Acceso total al sistema</span>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Selector de CCPP para observadores -->
+                            <div id="ccpp-container" class="md:col-span-2 {% if not usuario.is_staff and not usuario.is_superuser or not editar %}block{% else %}hidden{% endif %}">
+                            
+                                <label class="block text-xs font-bold text-slate-500 uppercase mb-1 ml-1">CCPP Asignada</label>
+                                <select name="ccpp_asignada" 
+                                        class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:ring-1 focus:ring-indigo-100 outline-none text-sm bg-white">
+                                    <option value="">-- Seleccionar CCPP --</option>
+                                    {% for ccpp in ccpps %}
+                                    <option value="{{ ccpp.id_ccpp }}" 
+                                            {% if usuario.profile.ccpp_asignada.id_ccpp == ccpp.id_ccpp %}selected{% endif %}>
+                                        {{ ccpp.nombre }} (CCPP{{ ccpp.id_ccpp|stringformat:'03d' }})
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            {% if not editar %}
+                            <!-- Campos de contraseña para NUEVO usuario -->
+                            <div>
+                                <label class="block text-xs font-bold text-slate-500 uppercase mb-1 ml-1">Contraseña *</label>
+                                <input type="password" name="password" id="password" 
+                                       class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:ring-1 focus:ring-indigo-100 outline-none text-sm">
+                                {% if errores.password %}
+                                <p class="text-red-500 text-xs mt-1">{{ errores.password }}</p>
+                                {% endif %}
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold text-slate-500 uppercase mb-1 ml-1">Confirmar Contraseña *</label>
+                                <input type="password" name="confirm_password" id="confirm_password" 
+                                       class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:ring-1 focus:ring-indigo-100 outline-none text-sm">
+                                {% if errores.confirm_password %}
+                                <p class="text-red-500 text-xs mt-1">{{ errores.confirm_password }}</p>
+                                {% endif %}
+                            </div>
+                            {% else %}
+                            <!-- Campos de contraseña para EDITAR usuario -->
+                            <div class="md:col-span-2">
+                                <div class="p-3 bg-amber-50 border border-amber-100 rounded-lg">
+                                    <div class="flex items-start">
+                                        <svg class="w-4 h-4 text-amber-500 mr-2.5 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.692-.833-2.464 0L4.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                                        </svg>
+                                        <div>
+                                            <p class="text-xs font-medium text-amber-700">Cambio de contraseña</p>
+                                            <p class="text-xs text-amber-600 mt-1">Dejar en blanco si no desea cambiar la contraseña.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold text-slate-500 uppercase mb-1 ml-1">Nueva Contraseña</label>
+                                <input type="password" name="new_password" id="new_password" 
+                                       class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:ring-1 focus:ring-indigo-100 outline-none text-sm">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold text-slate-500 uppercase mb-1 ml-1">Confirmar Nueva Contraseña</label>
+                                <input type="password" name="confirm_new_password" id="confirm_new_password" 
+                                       class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:ring-1 focus:ring-indigo-100 outline-none text-sm">
+                                {% if errores.confirm_new_password %}
+                                <p class="text-red-500 text-xs mt-1">{{ errores.confirm_new_password }}</p>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="flex items-center p-3 bg-slate-50 rounded-lg border border-slate-100 mt-3">
+                            <label class="flex items-center cursor-pointer w-full">
+                                <input type="checkbox" name="is_active" {% if usuario.is_active or not editar %}checked{% endif %} 
+                                       class="w-3.5 h-3.5 text-indigo-600 rounded">
+                                <div class="ml-3">
+                                    <span class="text-xs font-semibold text-slate-700">Usuario Activo</span>
+                                    <p class="text-xs text-slate-400 mt-1">Desactivar para bloquear el acceso del usuario al sistema</p>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    {% if errores.general %}
+                    <div class="mt-4 p-3 bg-red-50 border border-red-100 rounded-lg">
+                        <p class="text-red-600 text-xs font-medium">{{ errores.general }}</p>
+                    </div>
+                    {% endif %}
+                </form>
+            </section>
+        </main>
+    </div>
+    <!-- Modal de confirmación para eliminar -->
+    <div id="modal-confirmacion" class="fixed top-6 right-6 z-[10000] hidden w-full max-w-sm transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] opacity-0 translate-x-full">
+        <div class="message-item relative overflow-hidden rounded-2xl bg-white/95 backdrop-blur-md border border-white/20 shadow-[0_8px_32px_0_rgba(31,38,135,0.15)] hover:translate-y-[-2px] transition-transform duration-500 pointer-events-auto">
+            
+            <div class="p-5 flex items-start">
+                <div class="flex-shrink-0 flex items-center justify-center w-10 h-10 rounded-full bg-red-100 text-red-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                    </svg>
+                </div>
+
+                <div class="ml-4 flex-1">
+                    <h3 class="text-sm font-bold text-gray-900 leading-tight">¿Eliminar Usuario?</h3>
+                    <p class="text-[11px] text-gray-600 mt-1.5 leading-relaxed">
+                        Esta acción eliminará permanentemente al usuario <span id="username-eliminar" class="font-bold text-red-700"></span>. Esta acción no se puede deshacer.
+                    </p>
+                    
+                    <div class="flex gap-2 mt-4">
+                        <button id="btn-confirmar-eliminar" class="flex-1 px-3 py-2 bg-red-600 text-white rounded-lg font-bold text-[10px] uppercase tracking-wider hover:bg-red-700 transition-colors shadow-sm">
+                            Sí, eliminar
+                        </button>
+                        <button id="btn-cancelar-eliminar" class="flex-1 px-3 py-2 bg-gray-100 text-gray-700 rounded-lg font-bold text-[10px] uppercase tracking-wider hover:bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-slate-300">
+                            Cancelar
+                        </button>
+                    </div>
+                </div>
+
+                <button id="btn-cerrar-modal" class="ml-2 text-gray-400 hover:text-gray-600 transition-colors">
+                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="h-1 w-full bg-gray-100/50">
+                <div class="h-full bg-red-500 w-full"></div>
+            </div>
+        </div>
+    </div>
+    <script>
+        // Mostrar/ocultar menú lateral
+        function alternarMenu() {
+            const menuLateral = document.getElementById('sidebar-principal');
+            if (menuLateral.classList.contains('-translate-x-full')) {
+                menuLateral.classList.remove('-translate-x-full');
+                menuLateral.classList.add('translate-x-0');
+            } else {
+                menuLateral.classList.remove('translate-x-0');
+                menuLateral.classList.add('-translate-x-full');
+            }
+        }
+
+        // Mostrar/ocultar selector de CCPP según rol
+        function toggleCCPPSelector() {
+            const ccppContainer = document.getElementById('ccpp-container');
+            const rolObservador = document.getElementById('rol-observador');
+            const rolSupervisor = document.getElementById('rol-supervisor'); // Añadimos la referencia al supervisor
+
+            // Verificamos si observador O supervisor están seleccionados
+            if ((rolObservador && rolObservador.checked) || (rolSupervisor && rolSupervisor.checked)) {
+                ccppContainer.classList.remove('hidden');
+                ccppContainer.classList.add('block');
+            } else {
+                ccppContainer.classList.remove('block');
+                ccppContainer.classList.add('hidden');
+            }
+        }
+
+        // Limitar longitud del nombre de usuario en tiempo real
+        document.addEventListener('DOMContentLoaded', function() {
+            toggleCCPPSelector();
+            
+            // Escuchar cambios en los radios de rol
+            document.querySelectorAll('input[name="rol"]').forEach(radio => {
+                radio.addEventListener('change', toggleCCPPSelector);
+            });
+            
+            // Limitar nombre de usuario a 10 caracteres
+            const usernameInput = document.querySelector('input[name="username"]');
+            if (usernameInput && !usernameInput.readOnly) {
+                usernameInput.addEventListener('input', function() {
+                    if (this.value.length > 10) {
+                        this.value = this.value.substring(0, 10);
+                    }
+                });
+            }
+        });
+
+
+
+
+        // Modal de eliminación
+        let usuarioAEliminar = null;
+
+        /**
+        * Muestra el modal con animación de deslizamiento (Toast style)
+        */
+        function mostrarModalEliminar(username, usuarioId) {
+            usuarioAEliminar = usuarioId;
+            
+            const modal = document.getElementById('modal-confirmacion');
+            const spanNombre = document.getElementById('username-eliminar');
+            const btnCancelar = document.getElementById('btn-cancelar-eliminar');
+
+            // Insertar el nombre del usuario
+            if (spanNombre) spanNombre.textContent = username;
+
+            // 1. Quitar hidden
+            modal.classList.remove('hidden');
+
+            // 2. Forzar reflow para que la animación funcione
+            void modal.offsetWidth;
+
+            // 3. Activar animación de entrada
+            modal.classList.remove('opacity-0', 'translate-x-full');
+            modal.classList.add('opacity-100', 'translate-x-0');
+
+            // 4. Foco opcional en cancelar por accesibilidad
+            if (btnCancelar) btnCancelar.focus();
+        }
+
+        /**
+        * Oculta el modal con animación de salida
+        */
+        function ocultarModalEliminar() {
+            const modal = document.getElementById('modal-confirmacion');
+
+            // 1. Activar animación de salida
+            modal.classList.remove('opacity-100', 'translate-x-0');
+            modal.classList.add('opacity-0', 'translate-x-full');
+
+            // 2. Esperar a que termine la animación (600ms según tus clases CSS) para ocultar
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                usuarioAEliminar = null;
+            }, 600);
+        }
+
+        // --- Event Listeners ---
+
+        // Confirmar eliminación
+        document.getElementById('btn-confirmar-eliminar')?.addEventListener('click', function() {
+            if (usuarioAEliminar) {
+                // Redirección a la URL de Django
+                window.location.href = "{% url 'eliminar_usuario' 0 %}".replace('0', usuarioAEliminar);
+            }
+        });
+
+        // Cancelar eliminación (Botón principal)
+        document.getElementById('btn-cancelar-eliminar')?.addEventListener('click', ocultarModalEliminar);
+
+        // Cerrar con la (X) superior si existe
+        document.getElementById('btn-cerrar-modal')?.addEventListener('click', ocultarModalEliminar);
+
+        // Cerrar si se presiona la tecla ESC
+        document.addEventListener('keydown', function(e) {
+            if (e.key === "Escape") ocultarModalEliminar();
+        });
+
+
+
+    </script>
+</body>
+</html>

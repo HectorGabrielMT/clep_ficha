@@ -1,0 +1,457 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block titulo %}Clep - Gestión de Usuarios{% endblock %}
+{% block header_titulo %}Gestión de Usuarios{% endblock %}
+
+{% block header_actions %}
+<div>
+    <a href="{% url 'crear_usuario' %}" 
+       class="inline-flex items-center px-3 py-2 text-sm font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150 shadow-sm hover:shadow-md">
+        <i class="fas fa-plus mr-1.5 text-xs"></i>
+        <span class="text-xs">Nuevo Usuario</span>
+    </a>
+</div>
+{% endblock %}
+
+{% block contenido %}
+<div class="max-w-full h-full flex flex-col">
+    {% if usuarios %}
+        <!-- Filtros -->
+        <div class="relative bg-white p-3 pt-4 rounded-xl shadow-sm border border-indigo-50 mb-4">
+            <button id="reset-controls" type="button" title="Limpiar filtros"
+                    class="absolute top-2 right-2 p-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-full transition-colors duration-200 focus:outline-none"
+                    aria-label="Limpiar filtros">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                        d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                        d="M15 13l4 4m0-4l-4 4" />
+                </svg>
+            </button>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                <div>
+                    <label for="filter-usuario" class="block text-xs font-semibold text-slate-400 uppercase mb-1 ml-1">
+                        Buscar Usuario
+                    </label>
+                    <div class="relative">
+                        <input type="text" id="filter-usuario" data-column="usuario" 
+                            placeholder="Usuario o nombre..." 
+                            class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-100 outline-none text-xs pl-9 bg-white">
+                        <div class="absolute inset-y-0 left-0 flex items-center pl-2.5">
+                            <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <label for="filter-email" class="block text-xs font-semibold text-slate-400 uppercase mb-1 ml-1">
+                        Correo
+                    </label>
+                    <div class="relative">
+                        <input type="text" id="filter-email" data-column="email" 
+                            placeholder="Correo electrónico..." 
+                            class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-100 outline-none text-xs pl-9 bg-white">
+                        <div class="absolute inset-y-0 left-0 flex items-center pl-2.5">
+                            <i class="fas fa-envelope text-slate-400 text-xs"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <label for="filter-rol" class="block text-xs font-semibold text-slate-400 uppercase mb-1 ml-1">
+                        Rol
+                    </label>
+                    <select id="filter-rol" data-column="rol" 
+                            class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-100 outline-none text-xs bg-white cursor-pointer">
+                        <option value="" selected>Todos</option>
+                        <option value="admin">Administrador</option>
+                        <option value="supervisor">Supervisor</option>
+                        <option value="inspector">Inspector</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label for="filter-estado" class="block text-xs font-semibold text-slate-400 uppercase mb-1 ml-1">
+                        Estado
+                    </label>
+                    <select id="filter-estado" data-column="estado" 
+                            class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-100 outline-none text-xs bg-white cursor-pointer">
+                        <option value="" selected>Todos</option>
+                        <option value="activo">Activo</option>
+                        <option value="inactivo">Inactivo</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contenedor de datos -->
+        <div class="bg-white rounded-xl shadow-sm border border-indigo-50 overflow-hidden flex flex-col flex-1">
+            <!-- Vista escritorio -->
+            <div class="hidden lg:block overflow-x-auto overflow-y-auto flex-1">
+                <table class="w-full text-left border-separate border-spacing-0 min-w-full">
+                    <thead>
+                        <tr>
+                            <th class="sticky top-0 z-20 bg-indigo-50 px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-indigo-100">
+                                Usuario
+                            </th>
+                            <th class="sticky top-0 z-20 bg-indigo-50 px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-indigo-100">
+                                Nombre Completo
+                            </th>
+                            <th class="sticky top-0 z-20 bg-indigo-50 px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-indigo-100">
+                                Correo
+                            </th>
+                            <th class="sticky top-0 z-20 bg-indigo-50 px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-indigo-100">
+                                Rol
+                            </th>
+                            <th class="sticky top-0 z-20 bg-indigo-50 px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-indigo-100">
+                                Estado
+                            </th>
+                        </tr>
+                    </thead>
+                    
+                    <tbody class="divide-y divide-slate-100" id="data-table-body">
+                        {% for usuario in usuarios %}
+                        <tr class="hover:bg-indigo-50/50 transition-colors group cursor-pointer" 
+                            onclick="window.location.href='{% url 'editar_usuario' usuario.id %}'"
+                            data-usuario="{{ usuario.username|lower }} {{ usuario.first_name|lower }} {{ usuario.last_name|lower }}"
+                            data-email="{{ usuario.email|lower }}"
+                            data-rol="{% if usuario.is_superuser %}admin{% elif usuario.is_staff %}supervisor{% else %}inspector{% endif %}"
+                            data-estado="{% if usuario.is_active %}activo{% else %}inactivo{% endif %}">
+                            
+                            <td class="px-4 py-3 border-b border-slate-50">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-7 h-7 flex-shrink-0 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold text-xs group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                                        {{ usuario.username|slice:":2"|upper }}
+                                    </div>
+                                    <div class="min-w-0 flex-1">
+                                        <div class="text-xs font-medium text-slate-900">
+                                            <input 
+                                                type="text" 
+                                                value="{{ usuario.username }}" 
+                                                readonly 
+                                                class="input-invisible w-full block" 
+                                                title="{{ usuario.username }}"
+                                            >
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-4 py-3 border-b border-slate-50">
+                                <div class="text-xs text-slate-900">
+                                    {% if usuario.first_name or usuario.last_name %}
+                                        {{ usuario.first_name }} {{ usuario.last_name }}
+                                    {% else %}
+                                        <span class="text-slate-400">---</span>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td class="px-4 py-3 border-b border-slate-50">
+                                <div class="text-xs text-slate-900">
+                                    <input 
+                                        type="email" 
+                                        value="{{ usuario.email }}" 
+                                        readonly 
+                                        class="input-invisible w-full block" 
+                                        title="{{ usuario.email }}"
+                                    >
+                                </div>
+                            </td>
+                            <td class="px-4 py-3 border-b border-slate-50">
+                                <div class="text-xs">
+                                    {% if usuario.is_superuser %}
+                                        <span class="px-2 py-1 text-[10px] font-bold bg-red-100 text-red-700 rounded-full">Administrador</span>
+                                    {% elif usuario.is_staff %}
+                                        <span class="px-2 py-1 text-[10px] font-bold bg-amber-100 text-amber-700 rounded-full">Supervisor</span>
+                                    {% else %}
+                                        <span class="px-2 py-1 text-[10px] font-bold bg-blue-100 text-blue-700 rounded-full">Observador</span>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td class="px-4 py-3 border-b border-slate-50">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-xs">
+                                        {% if usuario.is_active %}
+                                            <span class="px-2 py-1 text-[10px] font-bold bg-emerald-100 text-emerald-700 rounded-full">Activo</span>
+                                        {% else %}
+                                            <span class="px-2 py-1 text-[10px] font-bold bg-slate-100 text-slate-700 rounded-full">Inactivo</span>
+                                        {% endif %}
+                                    </span>
+                                    <svg class="w-3.5 h-3.5 text-indigo-400 opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                    </svg>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Vista móvil -->
+            <div class="lg:hidden overflow-y-auto flex-1">
+                <div id="mobile-cards-container" class="space-y-3 p-3">
+                    {% for usuario in usuarios %}
+                    <div class="bg-white p-4 rounded-xl border border-slate-100 shadow-sm active:scale-[0.98] transition-transform cursor-pointer" 
+                         onclick="window.location.href='{% url 'editar_usuario' usuario.id %}'"
+                         data-usuario="{{ usuario.username|lower }} {{ usuario.first_name|lower }} {{ usuario.last_name|lower }}"
+                         data-email="{{ usuario.email|lower }}"
+                         data-rol="{% if usuario.is_superuser %}admin{% elif usuario.is_staff %}supervisor{% else %}inspector{% endif %}"
+                         data-estado="{% if usuario.is_active %}activo{% else %}inactivo{% endif %}">
+                        
+                        <div class="flex items-start justify-between mb-3">
+                            <div class="flex items-center gap-2 flex-1 min-w-0">
+                                <div class="w-10 h-10 flex-shrink-0 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold text-sm">
+                                    {{ usuario.username|slice:":2"|upper }}
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <h3 class="text-sm font-bold text-slate-900 truncate">
+                                        {{ usuario.username }}
+                                    </h3>
+                                    <div class="flex items-center mt-1 text-xs text-slate-500 truncate">
+                                        {{ usuario.email }}
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                {% if usuario.is_active %}
+                                    <span class="px-1.5 py-0.5 text-[9px] font-bold bg-emerald-100 text-emerald-700 rounded-full">Activo</span>
+                                {% else %}
+                                    <span class="px-1.5 py-0.5 text-[9px] font-bold bg-slate-100 text-slate-700 rounded-full">Inactivo</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 gap-3 text-sm pt-3 border-t border-slate-100">
+                            <div>
+                                <p class="text-slate-500 text-xs">Nombre</p>
+                                <p class="font-medium text-slate-900 text-sm">
+                                    {% if usuario.first_name or usuario.last_name %}
+                                        {{ usuario.first_name }} {{ usuario.last_name }}
+                                    {% else %}
+                                        <span class="text-slate-400 text-xs">No especificado</span>
+                                    {% endif %}
+                                </p>
+                            </div>
+                            <div>
+                                <p class="text-slate-500 text-xs">Rol</p>
+                                <p class="font-medium text-slate-900 text-sm">
+                                    {% if usuario.is_superuser %}
+                                        <span class="text-red-600 text-xs">Administrador</span>
+                                    {% elif usuario.is_staff %}
+                                        <span class="text-amber-600 text-xs">Supervisor</span>
+                                    {% else %}
+                                        <span class="text-blue-600 text-xs">Inspector</span>
+                                    {% endif %}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Contador de resultados -->
+            <div class="px-4 py-2.5 border-t border-indigo-50 bg-slate-50/50 flex justify-between items-center">
+                <span class="text-xs text-slate-400 font-medium">Total: {{ usuarios|length }}</span>
+                <span class="text-xs text-slate-400 font-medium">
+                    Mostrando <span id="filtered-count" class="font-bold text-indigo-600">{{ usuarios|length }}</span>
+                </span>
+            </div>
+        </div>
+
+        <!-- Mensaje sin resultados móvil -->
+        <div id="mobile-no-results" class="lg:hidden hidden mt-4">
+            <div class="text-center py-6 bg-white rounded-xl border border-slate-100 shadow-sm px-4">
+                <div class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-slate-100 mb-2">
+                    <i class="fas fa-search text-slate-400 text-sm"></i>
+                </div>
+                <h3 class="text-sm font-medium text-slate-700 mb-1">Sin resultados</h3>
+                <p class="text-slate-500 text-xs">
+                    No hay usuarios que coincidan con los filtros.
+                </p>
+            </div>
+        </div>
+
+    {% else %}
+        <!-- Estado vacío -->
+        <div class="flex-1 flex items-center justify-center">
+            <div class="text-center py-8 bg-white rounded-xl border border-slate-100 shadow-sm px-6 max-w-xs">
+                <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-indigo-50 mb-3">
+                    <i class="fas fa-users text-indigo-500 text-lg"></i>
+                </div>
+                <h3 class="text-base font-semibold text-slate-800 mb-2">Sin usuarios</h3>
+                <p class="text-slate-600 mb-4 text-xs">
+                    No hay usuarios registrados en el sistema.
+                </p>
+                <div class="flex flex-col gap-2 justify-center">
+                    <a href="{% url 'crear_usuario' %}" 
+                       class="inline-flex items-center justify-center px-3 py-2 text-xs font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150 shadow-sm">
+                        <i class="fas fa-plus mr-1.5 text-xs"></i>
+                        Crear primer usuario
+                    </a>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Modal de confirmación para eliminar -->
+<div id="modal-eliminar" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] hidden">
+    <div class="bg-white rounded-lg shadow-xl p-4 max-w-md w-full mx-4">
+        <div class="text-center">
+            <div class="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.692-.833-2.464 0L4.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                </svg>
+            </div>
+            <h3 class="text-base font-bold text-slate-800 mb-2">¿Eliminar usuario?</h3>
+            <p class="text-xs text-slate-600 mb-4">El usuario "<span id="usuario-nombre"></span>" será eliminado permanentemente. Esta acción no se puede deshacer.</p>
+            <div class="flex gap-2">
+                <button onclick="cerrarModal()" class="flex-1 px-3 py-1.5 border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50 transition-colors text-xs">Cancelar</button>
+                <form id="form-eliminar" method="POST" class="flex-1">
+                    {% csrf_token %}
+                    <button type="submit" class="w-full px-3 py-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-xs">Eliminar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Sistema de filtros responsivo
+    function initializeResponsiveFilters() {
+        try {
+            const controlesFiltro = document.querySelectorAll('#filter-usuario, #filter-email, #filter-rol, #filter-estado');
+            const botonReset = document.getElementById('reset-controls');
+            const filteredCount = document.getElementById('filtered-count');
+            
+            if (controlesFiltro.length === 0 || !filteredCount) return;
+
+            function aplicarFiltros() {
+                const isMobile = window.innerWidth < 1024;
+                const filtros = {};
+                let elementosFiltrados = 0;
+
+                // 1. Obtener elementos
+                const contenedorCards = document.getElementById('mobile-cards-container');
+                const cuerpoTabla = document.getElementById('data-table-body');
+                const mensajeNoResultadosMobile = document.getElementById('mobile-no-results');
+                
+                const elementos = isMobile 
+                    ? Array.from(contenedorCards?.querySelectorAll('div[data-usuario]') || [])
+                    : Array.from(cuerpoTabla?.querySelectorAll('tr') || []);
+
+                if (elementos.length === 0) return;
+
+                // 2. Recopilar valores de filtros
+                controlesFiltro.forEach(control => {
+                    const columna = control.getAttribute('data-column') || 
+                                   control.id.replace('filter-', '');
+                    const valor = control.value.trim();
+                    if (columna && valor) {
+                        filtros[columna] = valor.toLowerCase();
+                    }
+                });
+
+                // 3. Filtrar elementos
+                elementos.forEach(elemento => {
+                    let coincide = true;
+                    for (const columna in filtros) {
+                        const valorFiltro = filtros[columna];
+                        let valorElemento = (elemento.getAttribute(`data-${columna}`) || '').toLowerCase();
+
+                        if (columna === 'usuario' || columna === 'email') {
+                            if (!valorElemento.includes(valorFiltro)) { 
+                                coincide = false; 
+                                break; 
+                            }
+                        } else {
+                            if (valorElemento !== valorFiltro) { 
+                                coincide = false; 
+                                break; 
+                            }
+                        }
+                    }
+
+                    // Aplicar visibilidad
+                    if (isMobile) {
+                        elemento.style.display = coincide ? 'flex' : 'none';
+                    } else {
+                        elemento.style.display = coincide ? '' : 'none';
+                    }
+                    
+                    if (coincide) elementosFiltrados++;
+                });
+
+                // 4. Actualizar contador
+                filteredCount.textContent = elementosFiltrados;
+
+                // 5. Manejar estados vacíos
+                if (isMobile) {
+                    if (contenedorCards && mensajeNoResultadosMobile) {
+                        const hasResults = elementosFiltrados > 0;
+                        contenedorCards.style.display = hasResults ? 'block' : 'none';
+                        mensajeNoResultadosMobile.style.display = hasResults ? 'none' : 'block';
+                    }
+                } else {
+                    let filaNoResultados = document.getElementById('no-results-row');
+                    if (elementosFiltrados === 0 && !filaNoResultados && cuerpoTabla) {
+                        filaNoResultados = document.createElement('tr');
+                        filaNoResultados.id = 'no-results-row';
+                        filaNoResultados.innerHTML = `<td colspan="5" class="px-4 py-6 text-center text-slate-400"><div class="inline-flex items-center text-sm"><i class="fas fa-search mr-2 text-xs"></i> No hay resultados</div></td>`;
+                        cuerpoTabla.appendChild(filaNoResultados);
+                    } else if (filaNoResultados) {
+                        filaNoResultados.style.display = elementosFiltrados === 0 ? '' : 'none';
+                    }
+                }
+            }
+
+            // Configurar eventos
+            controlesFiltro.forEach(control => {
+                control.addEventListener('input', aplicarFiltros);
+                control.addEventListener('change', aplicarFiltros);
+            });
+            
+            if (botonReset) {
+                botonReset.addEventListener('click', () => {
+                    controlesFiltro.forEach(c => c.value = '');
+                    aplicarFiltros();
+                });
+            }
+
+            // Aplicar filtros iniciales
+            aplicarFiltros();
+
+        } catch (e) { 
+            console.error('Error inicializando filtros:', e); 
+        }
+    }
+
+    // Funciones del modal de eliminación
+    function confirmarEliminacion(id, nombre) {
+        document.getElementById('usuario-nombre').textContent = nombre;
+        document.getElementById('form-eliminar').action = `/usuarios/eliminar/${id}/`;
+        document.getElementById('modal-eliminar').classList.remove('hidden');
+    }
+
+    function cerrarModal() {
+        document.getElementById('modal-eliminar').classList.add('hidden');
+    }
+
+    // Manejar redimensionamiento de ventana
+    window.addEventListener('resize', initializeResponsiveFilters);
+
+    // Inicializar al cargar
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initializeResponsiveFilters);
+    } else {
+        initializeResponsiveFilters();
+    }
+</script>
+{% endblock %}

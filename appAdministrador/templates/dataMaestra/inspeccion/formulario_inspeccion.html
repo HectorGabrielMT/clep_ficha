@@ -1,0 +1,326 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clep - Editar Inspección</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/estiloGlobal.css' %}">
+    <link rel="icon" type="image/png" href="{% static 'img/icono.png' %}">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Poppins', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        .color-input-fix::-webkit-color-swatch-wrapper {
+            padding: 0;
+        }
+        .color-input-fix::-webkit-color-swatch {
+            border: none;
+            border-radius: 6px;
+        }
+        .color-input-fix {
+            height: 40px;
+            padding: 2px;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+        }
+        
+        .info-field {
+            background-color: #f9fafb;
+            cursor: not-allowed;
+            color: #6b7280;
+        }
+        
+        .info-field-label {
+            color: #6b7280;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 font-sans antialiased text-slate-900">
+    {% include 'base/mensajes.html' %}
+    
+    <div class="flex h-screen overflow-hidden">
+        
+        <!-- Sidebar -->
+        <aside id="sidebar-principal" class="fixed inset-y-0 left-0 w-64 bg-white shadow-xl flex flex-col z-50 border-r border-indigo-50 h-full flex-shrink-0 transition-transform duration-300 transform -translate-x-full lg:relative lg:translate-x-0">
+            <div class="p-6 border-b border-indigo-50 flex justify-center items-center relative">
+
+                <div class="absolute left-6 top-8">
+                    <a href="{% url 'inspecciones' %}" class="text-slate-400 hover:text-indigo-600 transition-colors flex items-center">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                        </svg>
+                    </a>
+                </div>
+
+                <div class="flex flex-col items-center">
+                    <a href="{% url 'panel_principal' %}" class="space-x-3">
+                        <div class="flex items-center gap-3">
+                            <div class="flex-shrink-0">
+                                <img src="{% static 'img/logo.png' %}" 
+                                    alt="Logo clep" 
+                                    class="w-32 h-16 object-contain drop-shadow-sm transition-transform duration-300 hover:scale-110">
+                            </div>
+                        </div>
+                    </a>
+                </div>
+                
+                <div class="absolute right-6 lg:hidden">
+                    <button onclick="alternarMenu()" class="p-2 text-slate-400 hover:text-red-500">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <nav class="flex-1 px-4 py-6 space-y-8 overflow-y-auto scrollIndependiente">
+                <!-- Acciones -->
+<div class="bg-white rounded-xl border border-green-400 shadow-sm mb-4 overflow-hidden">
+    <div class="bg-slate-50 border-b border-slate-100 px-4 py-2.5 flex items-center">
+        <div class="w-1 h-4 bg-green-500 rounded-full mr-2"></div>
+        <p class="text-[11px] font-bold text-slate-700 uppercase tracking-wider">Acciones</p>
+    </div>
+
+    <div class="p-1.5">
+        <button type="submit" form="main-inspeccion-form" 
+                class="w-full group flex items-center px-3 py-2.5 text-slate-600 hover:bg-slate-100 rounded-md transition-all duration-200">
+            
+            <div class="p-1.5 rounded-lg bg-slate-50 group-hover:bg-white group-hover:shadow-sm transition-all mr-3">
+                <svg class="w-4 h-4 text-slate-500 group-hover:text-slate-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path>
+                </svg>
+            </div>
+            
+            <span class="text-[13px] font-medium group-hover:text-slate-900">Guardar Cambios</span>
+        </button>
+    </div>
+</div>
+            </nav>
+
+            <!-- User Profile -->
+            <div class="p-2 border-t border-indigo-50">
+                <div class="flex items-center p-1.5 space-x-2 bg-indigo-50/50 rounded-lg">
+                    <div class="w-7 h-7 flex-shrink-0 rounded-full bg-indigo-600 flex items-center justify-center text-white font-bold text-[10px]">
+                        {% if user.first_name and user.last_name %}
+                            {{ user.first_name|slice:":1" }}{{ user.last_name|slice:":1" }}
+                        {% else %}
+                            {{ user.username|slice:":2"|upper }}
+                        {% endif %}
+                    </div>
+                    
+                    <div class="flex-1 min-w-0 leading-tight">
+                        <input 
+                            type="text" 
+                            value="{{ user.username }}" 
+                            readonly 
+                            class="input-invisible w-full bg-transparent border-none p-0 text-xs font-bold text-slate-900 focus:ring-0 cursor-default truncate"
+                            title="{{ user.username }}"
+                        >
+                        
+                        <input 
+                            type="email" 
+                            value="{{ user.email }}" 
+                            readonly 
+                            class="input-invisible w-full bg-transparent border-none p-0 text-[10px] text-indigo-500 focus:ring-0 cursor-default truncate block -mt-1"
+                            title="{{ user.email }}"
+                        >
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Fondo oscuro para móviles -->
+        <div id="fondo-oscuro" onclick="alternarMenu()" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden lg:hidden"></div>
+
+        <!-- Main Content -->
+        <main class="flex-1 flex flex-col min-w-0 bg-slate-50">
+            <header class="h-20 bg-white border-b border-slate-100 flex items-center px-6 sm:px-10 justify-between flex-shrink-0">
+                <div class="flex items-center gap-5">
+                    <button type="button" onclick="alternarMenu()" 
+                            class="lg:hidden p-2.5 rounded-xl text-slate-500 hover:bg-slate-50 hover:text-indigo-600 transition-all border border-slate-100 shadow-sm">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 6h16M4 12h16M4 18h16"></path>
+                        </svg>
+                    </button>
+
+                    <div class="flex items-baseline gap-4">
+                        <h1 class="text-xl font-bold text-slate-800 tracking-tight leading-none">
+                            Editar Inspección
+                        </h1>
+
+                        <nav class="hidden md:flex items-center text-sm font-medium">
+                            <span class="mx-2 text-slate-300">|</span>
+                            <div class="flex items-center gap-2">
+                                <a href="{% url 'panel_principal' %}" class="text-slate-400 hover:text-indigo-600 transition-colors">Inicio</a>
+
+                                <svg class="w-4 h-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                </svg>
+
+                                <a href="{% url 'inspecciones' %}" class="text-slate-400 hover:text-indigo-600 transition-colors">Inspecciones</a>
+
+                                <svg class="w-4 h-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                </svg>
+
+                                <a href="" class="text-indigo-500 hover:text-indigo-700">Editar</a>
+                            </div>
+                        </nav>
+                    </div>
+                </div>
+
+                <div>
+                    <a href="{% url 'inspecciones' %}" 
+                       class="inline-flex items-center px-4 py-2.5 text-sm font-medium rounded-xl border border-slate-200 
+                              text-slate-600 hover:bg-slate-50 hover:text-indigo-600 transition-colors">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                        </svg>
+                        Volver
+                    </a>
+                </div>
+            </header>
+
+            <section class="flex-1 overflow-y-auto px-6 pt-2 pb-6">
+                <form id="main-inspeccion-form" 
+                      method="POST" 
+                      action="{% url 'editar_inspeccion' inspeccion.id %}" 
+                      class="max-w-6xl mx-auto space-y-6 mt-2">
+                    {% csrf_token %}
+                    
+                    <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-8">
+                        <div class="mb-6">
+                            <h1 class="text-xl md:text-2xl font-bold text-slate-800">
+                                EDITAR INSPECCIÓN: <span class="text-indigo-600">{{ inspeccion.nombre_inspeccion|default:'' }}</span>
+                            </h1>
+                        </div>
+
+                        <div class="space-y-6">
+                            {# Sección de código y color en una fila - Campos informativos #}
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                                <div>
+                                    <label for="id_codigo" class="block text-xs font-bold text-slate-500 uppercase mb-1 ml-1">
+                                        Código *
+                                    </label>
+                                    <input type="text" name="codigo" id="id_codigo" maxlength="1"
+                                           value="{{ valor_codigo|default:inspeccion.codigo_inspeccion|default:'' }}"
+                                           autocomplete="off" readonly
+                                           class="w-full px-4 py-2 rounded-xl border border-slate-200 bg-slate-50 
+                                                  text-slate-500 text-sm uppercase font-bold text-center outline-none cursor-not-allowed">
+                                    {% if errores.codigo %}
+                                        <p class="mt-1 text-xs text-red-500 font-medium">{{ errores.codigo|safe }}</p>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="hidden md:block"></div> {# Espacio vacío para alineación #}
+                            </div>
+
+                            {# Campo Nombre - Informativo #}
+                            <div>
+                                <label for="id_nombre" class="block text-xs font-bold text-slate-500 uppercase mb-1 ml-1">
+                                    Nombre *
+                                </label>
+                                <input type="text" name="nombre" id="id_nombre" maxlength="255"
+                                       value="{{ valor_nombre|default:inspeccion.nombre_inspeccion|default:'' }}"
+                                       autocomplete="off" readonly
+                                       class="w-full px-4 py-2 rounded-xl border border-slate-200 bg-slate-50 
+                                              text-slate-500 text-sm outline-none cursor-not-allowed">
+                                {% if errores.nombre %}
+                                    <p class="mt-1 text-xs text-red-500 font-medium">{{ errores.nombre|safe }}</p>
+                                {% endif %}
+                            </div>
+
+                            <div class="pt-6 border-t border-slate-100">
+                                <h3 class="text-base font-bold text-slate-800 mb-6 flex items-center">
+                                    <svg class="w-4 h-4 mr-2 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                    </svg>
+                                    Campos Editables
+                                </h3>
+                            </div>
+
+                            {# Campos editables - Notifica y Descripción #}
+                            <div class="space-y-6">
+                                <div>
+                                    <label for="id_notifica" class="block text-xs font-bold text-slate-500 uppercase mb-1 ml-1">
+                                        Notifica *
+                                    </label>
+                                    <input type="text" name="notifica" id="id_notifica" maxlength="100"
+                                           value="{{ valor_notifica|default:inspeccion.notificacionA_inspeccion|default:'' }}"
+                                           autocomplete="off"
+                                           class="w-full px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-100 
+                                                  outline-none text-sm text-slate-900 placeholder-slate-400 transition duration-150">
+                                    {% if errores.notifica %}
+                                        <p class="mt-1 text-xs text-red-500 font-medium">{{ errores.notifica|safe }}</p>
+                                    {% endif %}
+                                </div>
+
+                                <div>
+                                    <label for="id_descripcion" class="block text-xs font-bold text-slate-500 uppercase mb-1 ml-1">
+                                        Descripción *
+                                    </label>
+                                    <textarea name="descripcion" id="id_descripcion" rows="4" maxlength="255"
+                                              autocomplete="off"
+                                              class="w-full px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-100 
+                                                     outline-none text-sm text-slate-900 placeholder-slate-400 resize-none">{{ valor_descripcion|default:inspeccion.descripcion_inspeccion|default:'' }}</textarea>
+                                    {% if errores.descripcion %}
+                                        <p class="mt-1 text-xs text-red-500 font-medium">{{ errores.descripcion|safe }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </section>
+        </main>
+    </div>
+
+    <script>
+    /**
+     * Alterna la visibilidad del menú lateral en dispositivos móviles.
+     */
+    function alternarMenu() {
+        const menuLateral = document.getElementById('sidebar-principal');
+        const fondoOscuro = document.getElementById('fondo-oscuro');
+        
+        if (menuLateral.classList.contains('-translate-x-full')) {
+            menuLateral.classList.remove('-translate-x-full');
+            menuLateral.classList.add('translate-x-0');
+            fondoOscuro.classList.remove('hidden');
+        } else {
+            menuLateral.classList.remove('translate-x-0');
+            menuLateral.classList.add('-translate-x-full');
+            fondoOscuro.classList.add('hidden');
+        }
+    }
+
+    /**
+     * INICIALIZACIÓN
+     */
+    document.addEventListener('DOMContentLoaded', function() {
+        // Agregar funcionalidad para que el botón del sidebar envíe el formulario
+        const submitButton = document.querySelector('button[type="submit"][form="main-inspeccion-form"]');
+        if (submitButton) {
+            submitButton.addEventListener('click', function() {
+                document.getElementById('main-inspeccion-form').submit();
+            });
+        }
+    });
+    </script>
+
+</body>
+</html>

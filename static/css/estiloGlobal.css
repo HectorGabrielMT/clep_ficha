@@ -1,0 +1,108 @@
+
+/* Scroll independiente en el menú lateral */
+
+.scrollIndependiente::-webkit-scrollbar {
+    width: 4px;
+}
+.scrollIndependiente::-webkit-scrollbar-track {
+    background: transparent;
+}
+.scrollIndependiente::-webkit-scrollbar-thumb {
+    background: #e0e7ff; 
+    border-radius: 10px;
+}
+
+
+
+
+
+/* Clase para que el input sea visualmente indistinguible del texto */
+.input-invisible {
+    border: none !important;
+    outline: none !important;
+    background-color: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100%;
+    /* Elimina el brillo azul/resaltado en móviles (Chrome/Safari) */
+    -webkit-tap-highlight-color: transparent;
+    /* Hace que el cursor sea el de texto normal, no el de edición */
+    cursor: default;
+    /* Resetea la apariencia nativa del sistema */
+    appearance: none;
+    -moz-appearance: none;
+    -webkit-appearance: none;
+}
+
+/* Evita cualquier efecto visual al hacer clic o foco */
+.input-invisible:focus {
+    outline: none !important;
+    box-shadow: none !important;
+    border: none !important;
+}
+
+/* Opcional: si quieres que el texto largo se oculte con puntos suspensivos 
+   pero se pueda navegar al hacer clic */
+.input-invisible {
+    text-overflow: ellipsis;
+}
+
+
+
+
+
+@layer base {
+  /* Chrome, Safari, Edge */
+  ::-webkit-scrollbar {
+    width: 4px;  /* Muy delgado para minimalismo */
+    height: 4px; /* Para scroll horizontal */
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent; 
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #d1d5db; /* Gris neutro elegante */
+    border-radius: 0px;  /* Totalmente cuadrado */
+    transition: background 0.3s ease;
+  }
+
+  /* Efecto Hover sutil */
+  ::-webkit-scrollbar-thumb:hover {
+    background: #6b7280; /* Oscurece con elegancia sin estridencias */
+  }
+
+  /* Firefox */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #d1d5db transparent;
+  }
+}
+
+
+
+
+body.loading {
+    overflow: hidden;
+        cursor: progress;
+
+}
+@keyframes dot {
+    0% {
+        opacity: 0.3;
+    }
+    50% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0.3;
+    }
+}
+
+.animate-dot {
+    animation: dot 1.4s ease-in-out infinite;
+}
+
+
+

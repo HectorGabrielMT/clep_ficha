@@ -1,0 +1,473 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% if es_edicion %}Clep - Editar Unidad{% else %}Clep - Nueva unidad{% endif %}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/estiloGlobal.css' %}">
+    <link rel="icon" type="image/png" href="{% static 'img/icono.png' %}">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Poppins', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-slate-50 font-sans antialiased text-slate-900">
+    {% include 'base/mensajes.html' %}
+    
+    <div class="flex h-screen overflow-hidden">
+        
+        <!-- Sidebar -->
+        <aside id="sidebar-principal" class="fixed inset-y-0 left-0 w-56 bg-white shadow-xl flex flex-col z-50 border-r border-indigo-50 h-full flex-shrink-0 transition-transform duration-300 transform -translate-x-full lg:relative lg:translate-x-0">
+            <div class="p-4 border-b border-indigo-50 flex justify-center items-center relative">
+
+                <div class="absolute left-4 top-6">
+                    <a href="{% url 'gestionUnidades_ccpp_modo' ccpp_id 'gestion' %}" class="text-slate-400 hover:text-indigo-600 transition-colors flex items-center">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                        </svg>
+                    </a>
+                </div>
+
+                <div class="flex flex-col items-center">
+                    <a href="{% url 'panel_principal' %}" class="space-x-3">
+                        <div class="flex items-center gap-3">
+                            <div class="flex-shrink-0">
+                                <img src="{% static 'img/logo.png' %}" 
+                                    alt="Logo clep" 
+                                    class="w-32 h-16 object-contain drop-shadow-sm transition-transform duration-300 hover:scale-110">
+                            </div>
+                        </div>
+                    </a>
+                </div>
+                
+                <div class="absolute right-4 lg:hidden">
+                    <button onclick="alternarMenu()" class="p-2 text-slate-400 hover:text-red-500">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <nav class="flex-1 px-3 py-4 space-y-6 overflow-y-auto scrollIndependiente">
+                <!-- Acciones -->
+                <div class="bg-white rounded-xl border border-green-400 shadow-sm mb-4 overflow-hidden">
+                    <div class="bg-slate-50 border-b border-slate-100 px-4 py-2.5 flex items-center">
+                        <div class="w-1 h-4 bg-green-500 rounded-full mr-2"></div>
+                        <p class="text-[11px] font-bold text-slate-700 uppercase tracking-wider">Acciones</p>
+                    </div>
+
+                    <div class="p-1.5 space-y-0.5">
+                        
+                        <button type="submit" form="main-unidad-form" 
+                                class="w-full group flex items-center px-3 py-2.5 text-slate-600 hover:bg-slate-100 rounded-md transition-all duration-200">
+                            <div class="p-1.5 rounded-lg bg-slate-50 group-hover:bg-white group-hover:shadow-sm transition-all mr-3">
+                                <svg class="w-4 h-4 text-slate-500 group-hover:text-slate-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path>
+                                </svg>
+                            </div>
+                            <span class="text-[13px] font-medium group-hover:text-slate-900">
+                                {% if es_edicion %}Guardar Cambios{% else %}Crear Unidad{% endif %}
+                            </span>
+                        </button>
+
+                        {% if es_edicion %}
+                            <a href="{% url 'panel_fichas' ccpp_id unidad_id 2 %}" 
+                            class="w-full group flex items-center px-3 py-2.5 text-slate-600 hover:bg-slate-100 rounded-md transition-all duration-200">
+                                <div class="p-1.5 rounded-lg bg-slate-50 group-hover:bg-white group-hover:shadow-sm transition-all mr-3">
+                                    <svg class="w-4 h-4 text-slate-500 group-hover:text-slate-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                    </svg>
+                                </div>
+                                <span class="text-[13px] font-medium group-hover:text-slate-900">Fichas</span>
+                            </a>
+                        {% endif %}
+
+                    </div>
+                </div>
+            </nav>
+
+
+            <div class="mt-auto border-t border-indigo-50 bg-slate-50/30">
+                {% if es_edicion %}
+                <div class="py-3 flex justify-center">
+                    <button onclick="openDeleteModal('{{ unidad_val|default:'' }}')"
+                            class="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 hover:text-red-500 transition-colors duration-200">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                        </svg>
+                        <span>ELIMINAR UNIDAD</span>
+                    </button>
+                </div>
+                {% endif %}
+
+                <div class="p-2 border-t border-indigo-50/50">
+                    <div class="flex items-center p-1.5 space-x-2 bg-white/80 rounded border border-indigo-50/50 shadow-sm">
+                        <div class="w-6 h-6 rounded-full bg-indigo-600 flex items-center justify-center text-white font-bold text-[9px]">
+                            {% if user.first_name and user.last_name %}
+                                {{ user.first_name|slice:":1" }}{{ user.last_name|slice:":1" }}
+                            {% else %}
+                                {{ user.username|slice:":2"|upper }}
+                            {% endif %}
+                        </div>
+                        
+                        <div class="flex-1 min-w-0 leading-tight">
+                            <input type="text" value="{{ user.username }}" readonly 
+                                class="input-invisible w-full bg-transparent border-none p-0 text-xs font-bold text-slate-900 focus:ring-0 cursor-default truncate"
+                                title="{{ user.username }}">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Fondo oscuro para móviles -->
+        <div id="fondo-oscuro" onclick="alternarMenu()" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden lg:hidden"></div>
+
+        <!-- Main Content -->
+        <main class="flex-1 flex flex-col min-w-0 bg-slate-50">
+            <header class="h-16 bg-white border-b border-slate-100 flex items-center px-4 sm:px-6 justify-between flex-shrink-0">
+                <div class="flex items-center gap-4">
+                    <button type="button" onclick="alternarMenu()" 
+                            class="lg:hidden p-2 rounded-lg text-slate-500 hover:bg-slate-50 hover:text-indigo-600 transition-all border border-slate-100 shadow-sm">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 6h16M4 12h16M4 18h16"></path>
+                        </svg>
+                    </button>
+
+                    <div class="flex items-baseline gap-3">
+                        <h1 class="text-lg font-bold text-slate-800 tracking-tight leading-none">
+                            {% if es_edicion %}Editar Unidad{% else %}Nueva Unidad{% endif %}
+                        </h1>
+
+                        <nav class="hidden md:flex items-center text-xs font-medium">
+                            <span class="mx-1.5 text-slate-300">|</span>
+                            <div class="flex items-center gap-1.5">
+                                <a href="{% url 'panel_principal' %}" class="text-slate-400 hover:text-indigo-600 transition-colors">Inicio</a>
+
+                                <svg class="w-3.5 h-3.5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                </svg>
+
+                                <a href="{% url 'ccpp' %}" class="text-slate-400 hover:text-indigo-600 transition-colors">CCPP</a>
+
+                                <svg class="w-3.5 h-3.5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                </svg>
+
+                                <a href="{% url 'editar_ccpp' ccpp_id %}" class="text-slate-400 hover:text-indigo-600 transition-colors">Detalle CCPP</a>
+
+                                <svg class="w-3.5 h-3.5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                </svg>
+
+                                <a href="{% url 'gestionUnidades_ccpp_modo' ccpp_id 'gestion' %}" class="text-slate-400 hover:text-indigo-600 transition-colors">Unidades</a>
+
+                                <svg class="w-3.5 h-3.5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                </svg>
+
+                                <a href="" class="text-indigo-500 hover:text-indigo-700">{% if es_edicion %}Detalle unidad{% else %}Nueva unidad{% endif %}</a>
+                            </div>
+                        </nav>
+                    </div>
+                </div>
+            </header>
+
+            <section class="flex-1 overflow-y-auto px-4 pt-2 pb-4">
+                {% if es_edicion and errors.db_error %}
+                <div id="db-error-alert" class="max-w-6xl mx-auto mt-2 mb-4 p-4 rounded-2xl border border-red-200 bg-red-50 flex items-start space-x-3">
+                    <svg class="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.394 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <div class="flex-grow">
+                        <p class="text-sm font-semibold text-red-800">Error en la operación</p>
+                        <p class="text-sm text-red-700 mt-1">{{ errors.db_error|safe }}</p>
+                    </div>
+                    <button type="button" onclick="hideDbError()" class="text-red-500 hover:text-red-700 ml-auto transition duration-150">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+                {% endif %}
+
+                <form id="main-unidad-form" 
+                    method="POST" 
+                    action="{% if es_edicion %}{% url 'editar_unidad' unidad_id ccpp_id %}{% else %}{% url 'nueva_unidad' ccpp_id  %}{% endif %}" 
+                    class="max-w-6xl mx-auto space-y-4 mt-2">
+                    {% csrf_token %}
+                    
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+                        <h3 class="text-sm font-bold text-slate-800 mb-4 flex items-center">
+                            <svg class="w-3.5 h-3.5 mr-2 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                            </svg>
+                            Información de la Unidad
+                        </h3>
+                        
+                        <div class="space-y-4">
+                            <div>
+                                <label for="id_capitulo" class="block text-xs font-bold text-slate-500 uppercase mb-1 ml-1">
+                                    Capítulo *
+                                </label>
+                                <input type="text" name="capitulo" id="id_capitulo" maxlength="200"
+                                    value="{{ capitulo_val|default:'' }}"
+                                    autocomplete="off"
+                                    class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-100 
+                                            outline-none text-xs text-slate-900 placeholder-slate-400 transition duration-150">
+                                {% if errores.capitulo %}
+                                    <p class="mt-1 text-xs text-red-500 font-medium">{{ errores.capitulo|safe }}</p>
+                                {% endif %}
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div class="md:col-span-2">
+                                    <label for="id_unidad" class="block text-xs font-bold text-slate-500 uppercase mb-1 ml-1">
+                                        Unidad *
+                                    </label>
+                                    <input type="text" name="unidad" id="id_unidad" maxlength="200"
+                                        value="{{ unidad_val|default:'' }}"
+                                        autocomplete="off"
+                                        class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-100 
+                                                outline-none text-xs text-slate-900 placeholder-slate-400 transition duration-150">
+                                    {% if errores.unidad %}
+                                        <p class="mt-1 text-xs text-red-500 font-medium">{{ errores.unidad|safe }}</p>
+                                    {% endif %}
+                                </div>
+
+                                <div>
+                                    <label for="id_doc" class="block text-xs font-bold text-slate-500 uppercase mb-1 ml-1">
+                                        Doc *
+                                    </label>
+                                    <input type="text" name="doc" id="id_doc"
+                                        value="{{ doc_val|default:'' }}"
+                                        pattern="[0-9]{2} [0-9]{2} [0-9]{2}"
+                                        title="El formato debe ser 00 00 00 (Ej: 01 05 23)"
+                                        maxlength="8"
+                                        autocomplete="off"
+                                        oninput="formatDocInput(this)"
+                                        placeholder="00 00 00"
+                                        class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-100 
+                                                outline-none text-xs text-slate-900 placeholder-slate-400 transition duration-150">
+                                    {% if errores.doc %}
+                                        <p class="mt-1 text-xs text-red-500 font-medium">{{ errores.doc|safe }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="pt-4 border-t border-slate-100">
+                                <h3 class="text-sm font-bold text-slate-800 mb-4 flex items-center">
+                                    <svg class="w-3.5 h-3.5 mr-2 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                    Información Adicional
+                                </h3>
+                            </div>
+
+                            <div class="space-y-4">
+                                <div>
+                                    <label for="id_descripcion" class="block text-xs font-bold text-slate-500 uppercase mb-1 ml-1">
+                                        Descripción
+                                    </label>
+                                    <textarea name="descripcion" id="id_descripcion" rows="4" maxlength="200"
+                                            autocomplete="off"
+                                            class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-100 
+                                                    outline-none text-xs text-slate-900 placeholder-slate-400 resize-none">{{ descripcion_val|default:'' }}</textarea>
+                                    {% if errores.descripcion %}
+                                        <p class="mt-1 text-xs text-red-500 font-medium">{{ errores.descripcion|safe }}</p>
+                                    {% endif %}
+                                </div>
+
+                                <div>
+                                    <label for="id_observacion" class="block text-xs font-bold text-slate-500 uppercase mb-1 ml-1">
+                                        Observación
+                                    </label>
+                                    <textarea name="observacion" id="id_observacion" rows="3" maxlength="200"
+                                            autocomplete="off"
+                                            class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-100 
+                                                    outline-none text-xs text-slate-900 placeholder-slate-400 resize-none">{{ observacion_val|default:'' }}</textarea>
+                                    {% if errores.observacion %}
+                                        <p class="mt-1 text-xs text-red-500 font-medium">{{ errores.observacion|safe }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </section>
+        </main>
+    </div>
+
+    {% if es_edicion %}
+        <!-- Modal de eliminación -->
+        <div id="delete-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 hidden">
+            <div class="absolute inset-0 bg-black bg-opacity-50" onclick="closeDeleteModal()"></div>
+            
+            <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm">
+                <div class="p-6">
+                    <div class="flex items-center justify-center w-12 h-12 mx-auto mb-3 bg-red-50 rounded-xl">
+                        <svg class="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.394 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                    </div>
+                    
+                    <div class="text-center">
+                        <h3 class="text-base font-bold text-slate-800 mb-2">Confirmar Eliminación</h3>
+                        <p class="text-xs text-slate-600 mb-4">
+                            ¿Está seguro que desea eliminar la unidad: 
+                            <span class="font-semibold text-red-600" id="unidad-name">{{ unidad_val|default:'' }}</span>?
+                            <br>
+                            <span class="text-xs text-red-500 font-medium">Esta acción es permanente y no se puede deshacer.</span>
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="flex border-t border-slate-100 p-4">
+                    <button type="button" id="confirm-delete-button" onclick="document.getElementById('delete-unidad-form').submit();"
+                            class="flex-1 px-3 py-1.5 bg-red-600 text-white text-xs font-medium rounded-lg hover:bg-red-700 transition-colors">
+                        Eliminar
+                    </button>
+                    <button type="button" id="cancel-delete-button" onclick="closeDeleteModal()"
+                            class="flex-1 px-3 py-1.5 bg-white text-slate-700 text-xs font-medium rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors ml-2">
+                        Cancelar
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Formulario oculto para eliminar -->
+        <form method="POST" action="{% url 'eliminar_unidad' unidad_id ccpp_id%}" id="delete-unidad-form" class="hidden">
+            {% csrf_token %}
+        </form>
+    {% endif %}
+
+    <script>
+    /**
+     * Alterna la visibilidad del menú lateral en dispositivos móviles.
+     */
+    function alternarMenu() {
+        const menuLateral = document.getElementById('sidebar-principal');
+        const fondoOscuro = document.getElementById('fondo-oscuro');
+        
+        if (menuLateral.classList.contains('-translate-x-full')) {
+            menuLateral.classList.remove('-translate-x-full');
+            menuLateral.classList.add('translate-x-0');
+            fondoOscuro.classList.remove('hidden');
+        } else {
+            menuLateral.classList.remove('translate-x-0');
+            menuLateral.classList.add('-translate-x-full');
+            fondoOscuro.classList.add('hidden');
+        }
+    }
+
+    /**
+     * FUNCIONES PARA EL MODAL DE ELIMINACIÓN
+     */
+    function openDeleteModal(unidadName) {
+        // Actualizar el nombre de la unidad en el modal
+        const unidadNameElement = document.getElementById('unidad-name');
+        if (unidadNameElement) {
+            unidadNameElement.textContent = unidadName || 'esta unidad';
+        }
+
+        // Mostrar el modal
+        const modal = document.getElementById('delete-modal');
+        modal.classList.remove('hidden');
+        document.body.classList.add('overflow-hidden');
+
+        // Establecer el foco en el botón de Cancelar
+        document.getElementById('cancel-delete-button').focus();
+    }
+
+    function closeDeleteModal() {
+        const modal = document.getElementById('delete-modal');
+        modal.classList.add('hidden');
+        document.body.classList.remove('overflow-hidden');
+    }
+
+    /**
+     * FUNCIÓN PARA OCULTAR EL ERROR DE BASE DE DATOS
+     */
+    function hideDbError() {
+        const errorAlert = document.getElementById('db-error-alert');
+        if (errorAlert) {
+            errorAlert.style.display = 'none';
+        }
+    }
+
+    /**
+     * FUNCIÓN PARA FORMATEAR EL INPUT DE DOC
+     */
+    function formatDocInput(input) {
+        // Eliminar caracteres no numéricos
+        let value = input.value.replace(/\D/g, '');
+        
+        // Limitar a 6 dígitos
+        if (value.length > 6) {
+            value = value.substring(0, 6);
+        }
+        
+        // Formatear como 00-00-00
+        let formatted = '';
+        for (let i = 0; i < value.length; i++) {
+            if (i > 0 && i % 2 === 0 && i < 6) {
+                formatted += ' ';
+            }
+            formatted += value[i];
+        }
+        
+        input.value = formatted;
+    }
+
+    /**
+     * MANEJO DE TECLADO PARA MODALES (ESC para cerrar)
+     */
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') {
+            const deleteModal = document.getElementById('delete-modal');
+            
+            if (deleteModal && !deleteModal.classList.contains('hidden')) {
+                closeDeleteModal();
+            }
+        }
+    });
+
+    /**
+     * INICIALIZACIÓN
+     */
+    document.addEventListener('DOMContentLoaded', function() {
+        // Configurar eventos para el modal
+        const cancelDeleteButton = document.getElementById('cancel-delete-button');
+        if (cancelDeleteButton) {
+            cancelDeleteButton.addEventListener('click', closeDeleteModal);
+        }
+        
+        // Inicializar el formateo del campo Doc si existe
+        const docInput = document.getElementById('id_doc');
+        if (docInput) {
+            // Formatear valor inicial si existe
+            if (docInput.value) {
+                formatDocInput(docInput);
+            }
+            
+            // Agregar evento para formateo en tiempo real
+            docInput.addEventListener('input', function() {
+                formatDocInput(this);
+            });
+        }
+    });
+    </script>
+
+</body>
+</html>

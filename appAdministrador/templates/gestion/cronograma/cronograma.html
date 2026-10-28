@@ -1,0 +1,1924 @@
+{% extends "base/estructura.html" %}
+
+{% block title %}Cronograma | {{ ccpp.nombre }}{% endblock %}
+{% block breadcrumb_active %}Cronograma{% endblock %}
+{% block page_title %}Cronograma{% endblock %}
+{% block page_subtitle %}{{ ccpp.nombre }} - Gestión de Inspecciones por Año.{% endblock %}
+
+{% block sidebar_menu %}
+
+
+<div class="bg-white rounded-xl border border-green-400 shadow-sm mb-4 overflow-hidden">
+    <div class="bg-slate-50 border-b border-slate-100 px-4 py-2.5 flex items-center">
+        <div class="w-1 h-4 bg-green-500 rounded-full mr-2"></div>
+        <p class="text-[11px] font-bold text-slate-700 uppercase tracking-wider">Vista</p>
+    </div>
+
+    <div class="p-2 space-y-1">
+        <label class="group flex items-center px-3 py-2.5 text-slate-600 hover:bg-slate-100 rounded-md transition-all duration-200 cursor-pointer">
+            <input type="radio" name="modo_vista" value="anual" 
+                class="w-4 h-4 mr-3 text-green-600 focus:ring-green-500 border-slate-300 transition-colors"
+                {% if modo_actual != 'global' %}checked{% endif %} onchange="cambiarModoVista('anual')">
+            <span class="text-[13px] font-medium group-hover:text-slate-900">Anual</span>
+        </label>
+        
+        <label class="group flex items-center px-3 py-2.5 text-slate-600 hover:bg-slate-100 rounded-md transition-all duration-200 cursor-pointer">
+            <input type="radio" name="modo_vista" value="global" 
+                class="w-4 h-4 mr-3 text-green-600 focus:ring-green-500 border-slate-300 transition-colors"
+                {% if modo_actual == 'global' %}checked{% endif %} onchange="cambiarModoVista('global')">
+            <span class="text-[13px] font-medium group-hover:text-slate-900">Global</span>
+        </label>
+
+        <div id="selector-anual" class="mt-2 pt-2 border-t border-slate-100 {% if modo_actual == 'global' %}hidden{% endif %}">
+            <div class="px-2 pb-1">
+                <div class="relative">
+                    <select id="filtro-anio" class="w-full text-left font-semibold text-[12px] py-2 px-3 appearance-none bg-slate-50 border border-slate-200 rounded-lg text-slate-700 focus:ring-2 focus:ring-green-100 focus:border-green-400 outline-none cursor-pointer transition-all">
+                        {% for a in lista_anios %}
+                            <option value="{{ a.indice }}" {% if anio_seleccionado == a.indice %}selected{% endif %}>{{ a.label }}</option>
+                        {% endfor %}
+                    </select>
+                    <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% if  user.is_superuser or user.is_staff %}
+    <div class="bg-white rounded-xl border border-red-400 shadow-sm mb-4 overflow-hidden">
+        <div class="bg-slate-50 border-b border-slate-100 px-4 py-2.5 flex items-center">
+            <div class="w-1 h-4 bg-red-500 rounded-full mr-2"></div>
+            <p class="text-[11px] font-bold text-slate-700 uppercase tracking-wider">Gestión</p>
+        </div>
+
+        <div class="p-1.5 space-y-0.5">
+            <a 
+                {% if not modo_actual == 'global' %}
+                    {% for a in lista_anios %}
+                        {% if anio_seleccionado == a.indice %}href="{% url 'gestion_notificaciones' ccpp.id_ccpp %}?anio={{ a.indice }}&mes=enero"{% endif %}
+                    {% endfor %}
+                {% else %}
+                    href="{% url 'gestion_notificaciones' ccpp.id_ccpp %}?anio=0&mes=enero"
+                {% endif %}
+                class="group flex items-center px-3 py-2.5 text-slate-600 hover:bg-slate-100 rounded-md transition-all duration-200">
+                
+                <div class="p-1.5 rounded-lg bg-slate-50 group-hover:bg-white group-hover:shadow-sm transition-all mr-3">
+                    <svg class="w-4 h-4 text-slate-500 group-hover:text-slate-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
+                    </svg>
+                </div>
+                <span class="text-[13px] font-medium group-hover:text-slate-900">Notificaciones</span>
+            </a>
+
+            {% if  user.is_superuser %}
+                <a href="{% url 'panel_pagos' ccpp.id_ccpp %}" 
+                    class="group flex items-center px-3 py-2.5 text-slate-600 hover:bg-slate-100 rounded-md transition-all duration-200">
+                    
+                    <div class="p-1.5 rounded-lg bg-slate-50 group-hover:bg-white group-hover:shadow-sm transition-all mr-3">
+                        <svg class="w-4 h-4 text-slate-500 group-hover:text-slate-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                        </svg>
+                    </div>
+                    <span class="text-[13px] font-medium group-hover:text-slate-900">Pagos</span>
+                </a>
+            {% endif %}
+
+        </div>
+    </div>
+
+    {% if  user.is_superuser %}
+        <div class="bg-white rounded-xl border border-blue-400 shadow-sm mb-4 overflow-hidden">
+            <div class="bg-slate-50 border-b border-slate-100 px-4 py-2.5 flex items-center">
+                <div class="w-1 h-4 bg-blue-500 rounded-full mr-2"></div>
+                <p class="text-[11px] font-bold text-slate-700 uppercase tracking-wider">Exportar</p>
+            </div>
+
+            <div class="p-1.5 space-y-0.5">
+                
+                <button type="button" 
+                        onclick="abrirFormulario_noti()" 
+                        class="w-full group flex items-center px-3 py-2.5 text-slate-600 hover:bg-slate-100 rounded-md transition-all duration-200">
+                    <div class="p-1.5 rounded-lg bg-slate-50 group-hover:bg-white group-hover:shadow-sm transition-all mr-3">
+                        <svg class="w-4 h-4 text-slate-500 group-hover:text-slate-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                        </svg>
+                    </div>
+                    <span class="text-[13px] font-medium group-hover:text-slate-900">Noti/Resp</span>
+                </button>
+
+                <button type="button" 
+                        onclick="abrirModalInspecciones()" 
+                        class="w-full group flex items-center px-3 py-2.5 text-slate-600 hover:bg-slate-100 rounded-md transition-all duration-200">
+                    <div class="p-1.5 rounded-lg bg-slate-50 group-hover:bg-white group-hover:shadow-sm transition-all mr-3">
+                        <svg class="w-4 h-4 text-slate-500 group-hover:text-slate-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                        </svg>
+                    </div>
+                    <span class="text-[13px] font-medium group-hover:text-slate-900">Inspecciones</span>
+                </button>
+                
+                <button type="button" 
+                        onclick="abrirFormulario_libroFicha()" 
+                        class="w-full group flex items-center px-3 py-2.5 text-slate-600 hover:bg-slate-100 rounded-md transition-all duration-200">
+                    <div class="p-1.5 rounded-lg bg-slate-50 group-hover:bg-white group-hover:shadow-sm transition-all mr-3">
+                        <svg class="w-4 h-4 text-slate-500 group-hover:text-slate-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                        </svg>
+                    </div>
+                    <span class="text-[13px] font-medium group-hover:text-slate-900">Libro fichas</span>
+                </button>
+            </div>
+        </div>
+    {% endif %}
+
+{% endif %}
+<div class="bg-white rounded-xl border border-yellow-400 shadow-sm mb-4 overflow-hidden">
+    <div class="bg-slate-50 border-b border-slate-100 px-4 py-2 flex items-center justify-between">
+        <div class="flex items-center">
+            <div class="w-1 h-4 bg-yellow-500 rounded-full mr-2"></div>
+            <p class="text-[11px] font-bold text-slate-700 uppercase tracking-wider">Filtros</p>
+        </div>
+        
+        <button type="button" id="btn-limpiar-filtros" 
+            title="Limpiar filtros"
+            class="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-all duration-200">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                    d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13l4 4m0-4l-4 4" />
+                            </svg>
+        </button>
+    </div>
+
+    <div class="p-3 space-y-4">
+        <div>
+            <label class="text-[10px] font-bold text-slate-400 uppercase px-1 mb-2 block tracking-tight">Unidad / Capítulo</label>
+            <div class="space-y-2 px-1">
+                <input type="text" id="filtro-unidad" 
+                    class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-[13px] focus:bg-white focus:ring-2 focus:ring-yellow-100 focus:border-yellow-400 outline-none transition-all placeholder:text-slate-400" 
+                    placeholder="Buscar unidad...">
+                
+                <input type="text" id="filtro-capitulo" 
+                    class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-[13px] focus:bg-white focus:ring-2 focus:ring-yellow-100 focus:border-yellow-400 outline-none transition-all placeholder:text-slate-400" 
+                    placeholder="Buscar capítulo...">
+            </div>
+        </div>
+        {% if user.is_superuser %}
+            <div>
+                <label class="text-[10px] font-bold text-slate-400 uppercase px-1 mb-2 block tracking-tight">Inspección</label>
+                <div class="px-1">
+                    <div class="relative">
+                        <select id="filtro-inspeccion" 
+                            class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-[13px] appearance-none focus:bg-white focus:ring-2 focus:ring-yellow-100 focus:border-yellow-400 outline-none cursor-pointer transition-all">
+                            <option value="">Todas</option>
+                            <option value="__con__" class="font-bold text-green-700">Con inspección</option>
+                            <option value="__sin__" class="font-bold text-red-700">Sin inspección</option>
+                            {% for insp in inspecciones %}
+                                <option value="{{ insp.id }}">{{ insp.codigo_inspeccion }} - {{ insp.nombre_inspeccion }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        <div class="px-1 pt-1">
+            <label class="inline-flex items-center cursor-pointer group">
+                <div class="relative flex items-center">
+                    <input type="checkbox" id="toggle-capitulos" checked 
+                        class="peer appearance-none w-3.5 h-3.5 border border-slate-300 rounded bg-white checked:bg-green-500 checked:border-green-500 transition-all duration-200 cursor-pointer">
+                    <svg class="absolute w-2.5 h-2.5 text-white opacity-0 peer-checked:opacity-100 pointer-events-none left-0.5" 
+                        fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3.5" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                </div>
+                <span class="ml-2 text-[11px] font-medium text-slate-500 group-hover:text-slate-700 transition-colors">
+                    Mostrar capítulos
+                </span>
+            </label>
+        </div>
+    </div>
+</div>
+
+<div class="bg-white rounded-xl border border-indigo-400 shadow-sm mb-4 overflow-hidden">
+    <div class="bg-slate-50 border-b border-slate-100 px-4 py-2.5 flex items-center">
+        <div class="w-1 h-4 bg-indigo-500 rounded-full mr-2"></div>
+        <p class="text-[11px] font-bold text-slate-700 uppercase tracking-wider">Inspecciones</p>
+    </div>
+
+    <div class="p-2.5">
+<div class="grid grid-cols-1 gap-0 text-[10px] text-slate-500 max-w-[180px]">
+    <div class="flex items-center hover:bg-slate-50 py-0.5 px-1 rounded transition-colors">
+        <div class="flex items-center justify-center w-4 h-4 text-[8px] text-white letra-M me-2 flex-none rounded-sm shadow-sm">M</div>
+        <span class="truncate">Operator Manto-Especialista</span>
+    </div>
+
+    <div class="flex items-center hover:bg-slate-50 py-0.5 px-1 rounded transition-colors">
+        <div class="flex items-center justify-center w-4 h-4 text-[8px]  text-white letra-E me-2 flex-none rounded-sm shadow-sm">E</div>
+        <span class="truncate">Técnico Cabecera-Operario</span>
+    </div>
+
+    <div class="flex items-center hover:bg-slate-50 py-0.5 px-1 rounded transition-colors">
+        <div class="flex items-center justify-center w-4 h-4 text-[8px]  text-white letra-O me-2 flex-none rounded-sm shadow-sm">O</div>
+        <span class="truncate">Operario</span>
+    </div>
+
+    <div class="flex items-center hover:bg-slate-50 py-0.5 px-1 rounded transition-colors">
+        <div class="flex items-center justify-center w-4 h-4 text-[8px]  text-white letra-T me-2 flex-none rounded-sm shadow-sm">T</div>
+        <span class="truncate">Técnico Cabecera</span>
+    </div>
+
+    <div class="flex items-center hover:bg-slate-50 py-0.5 px-1 rounded transition-colors">
+        <div class="flex items-center justify-center w-4 h-4 text-[8px] text-white letra-I me-2 flex-none rounded-sm shadow-sm">I</div>
+        <span class="truncate">Insp. Reglamentaria</span>
+    </div>
+
+    <div class="flex items-center hover:bg-slate-50 py-0.5 px-1 rounded transition-colors">
+        <div class="flex items-center justify-center w-4 h-4 text-[8px] text-white letra-P me-2 flex-none rounded-sm shadow-sm">P</div>
+        <span class="truncate">Prueba Reglamentaria</span>
+    </div>
+
+    <div class="flex items-center hover:bg-slate-50 py-0.5 px-1 rounded transition-colors">
+        <div class="flex items-center justify-center w-4 h-4 text-[8px]  text-white letra-C me-2 flex-none rounded-sm shadow-sm">C</div>
+        <span class="truncate">Control Obligatorio</span>
+    </div>
+
+    <div class="flex items-center hover:bg-slate-50 py-0.5 px-1 rounded transition-colors border-b border-slate-100 mb-1">
+        <div class="flex items-center justify-center w-4 h-4 text-[8px]  text-white letra-S me-2 flex-none rounded-sm shadow-sm">S</div>
+        <span class="truncate">Sustitución Obligatoria</span>
+    </div>
+
+    <div class="pt-1 px-1 flex items-center text-[9px] text-slate-400">
+        <div class="flex items-center gap-1">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span>Mod: <span class="font-semibold">{{ ccpp.fecha_modificacion|date:"d/m/y" }}</span></span>
+        </div>
+    </div>
+</div>
+    </div>
+</div>
+{% endblock %}
+
+
+
+{% block content %}
+<div class="p-0">
+    <form method="POST" id="form-cronograma">
+        {% csrf_token %}
+
+
+        <div class="w-full h-[calc(100vh)] overflow-auto border border-gray-200">
+
+
+            {% if mostrar_columna_anio %}
+                <table class="w-full text-center align-middle text-[11px] border-separate border-spacing-0">
+            {% else %}
+                <table class="w-full text-center align-middle text-[11px] border-collapse border border-gray-300">
+            {% endif %}
+
+
+                <!-- ================= HEADER FIJO ================= -->
+                <thead>
+                    <tr>
+                        <th id="ordenar-unidad"
+                            class="sticky top-0 left-0 z-50
+                                border-r border-b border-gray-300
+                                bg-gray-200 
+                                text-left px-2 py-1 text-[10px]
+                                cursor-pointer ">
+                            Unidad <span id="icono-orden-unidad">⬍</span>
+                        </th>
+
+                        {% if mostrar_columna_anio %}
+                        <th class="sticky top-0 z-50
+                                w-16
+                                border-r border-b border-gray-300
+                                bg-gray-200
+                                py-1 text-[10px] font-semibold">
+                            Año
+                        </th>
+                        {% endif %}
+
+                        {% for mes_label in lista_meses %}
+                        <th class="sticky top-0 z-40
+                                w-16
+                                border-r border-b border-gray-300
+                                bg-gray-100
+                                py-1 text-[10px]">
+                            {{ mes_label|capfirst }}
+                        </th>
+                        {% endfor %}
+                        <th class="sticky top-0 z-40 border-r border-b border-gray-300 bg-gray-200 py-1 text-[10px]">Noti</th>
+                        <th class="sticky top-0 z-40 border-r border-b border-gray-300 bg-gray-200 py-1 text-[10px]">Resp</th>
+                        <th class="sticky top-0 z-40 border-r border-b border-gray-300 bg-gray-200 py-1 w-32 text-[10px]">Nota</th>
+                        <th class="sticky top-0 z-40 border-b border-b border-gray-300 bg-gray-200 py-1 text-[10px]">
+                            Observación
+                        </th>
+                    </tr>
+                </thead>
+
+                <!-- ================= BODY ================= -->
+                <tbody>
+
+                    {% for item in tabla_cronograma %}
+                        <tr class="editable-row group transition-colors {% ifchanged item.unidad.id_unidad %}unidad-separador{% endifchanged %}"
+                        data-unidad-id="{{ item.unidad.id_unidad }}"
+                        data-anio="{{ item.anio }}"
+                        data-unidad="{{ item.unidad.unidad|lower }}"
+                        data-capitulo="{{ item.unidad.capitulo|lower }}">
+
+                        <!-- UNIDAD -->
+                        {% if item.mostrar_unidad %}
+                            <td class="sticky left-0 z-30
+                                    border-r border-b border-gray-200
+                                    bg-gray-50
+                                    text-left px-2 py-1"
+                                rowspan="{{ item.rowspan_unidad }}">
+
+                                <div class="flex items-start justify-between gap-2">
+
+                                    <!-- Texto unidad -->
+                                    <div>
+                                        <div class="font-semibold text-[11px] unidad-text">
+                                            {{ item.unidad.unidad }}
+                                        </div>
+                                        <div class="text-gray-500 text-[9px] capitulo-text">
+                                            {{ item.unidad.capitulo }}
+                                        </div>
+                                    </div>
+
+<!-- Botones de acceso directo a la unidad -->
+<div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 mt-0.5">
+    <a href="{% url 'panel_fichas' ccpp.id_ccpp item.unidad.id_unidad 0 %}"
+       title="Fichas de la unidad"
+       class="flex items-center justify-center w-6 h-6 rounded-lg bg-indigo-100 text-indigo-600 hover:bg-indigo-600 hover:text-white transition-colors">
+        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <path d="M14 2v6h6"/>
+            <path d="M9 13h6"/>
+            <path d="M9 17h6"/>
+        </svg>
+    </a>
+
+    <a href="{% url 'gestion_notificaciones_unidad' ccpp.id_ccpp item.unidad.id_unidad %}"
+       title="Inspecciones de la unidad"
+       class="flex items-center justify-center w-6 h-6 rounded-lg bg-emerald-100 text-emerald-600 hover:bg-emerald-600 hover:text-white transition-colors">
+        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 11l3 3L22 4"/>
+            <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
+        </svg>
+    </a>
+</div>
+
+                                </div>
+                            </td>
+                        {% endif %}
+
+
+                        <!-- AÑO -->
+                        {% if mostrar_columna_anio %}
+                        <td class="border-r border-b border-gray-200
+                                bg-gray-50
+                                py-1 text-center font-semibold">
+                            {{ item.anio }}
+                        </td>
+                        {% endif %}
+
+
+                        <!-- MESES -->
+
+
+
+
+{% for mes in item.meses_info %}
+<td class="excel-td border-r border-b border-gray-200 relative p-0
+        {% if mes.is_past %}bg-yellow-50{% else %}bg-white{% endif %}
+        cursor-pointer transition-colors"
+    onclick="seleccionarCeldaExcel(this)">
+    
+    {% if user.is_superuser %}
+    <div class="lazy-cell w-full h-full min-h-[32px] flex items-center justify-center relative"
+        data-ccpp="{{ ccpp.id_ccpp }}" data-unidad="{{ item.unidad.id_unidad }}"
+        data-anio="{{ item.anio_relativo }}" data-campo="{{ mes.mes }}" data-valor="{{ mes.valor|default:'' }}"
+        data-relevantes="{{ mes.inspecciones_relevantes|join:',' }}">
+    {% elif user.is_staff %}
+    <div class="readonly-cell w-full h-full min-h-[32px] flex items-center justify-center relative"
+        data-ccpp="{{ ccpp.id_ccpp }}" data-unidad="{{ item.unidad.id_unidad }}"
+        data-anio="{{ item.anio_relativo }}" data-campo="{{ mes.mes }}" data-valor="{{ mes.valor|default:'' }}"
+        data-relevantes="{{ mes.inspecciones_relevantes|join:',' }}">
+    {% else %}
+    <div class="w-full h-full min-h-[32px] flex items-center justify-center relative">
+    {% endif %}
+
+        {% if mes.es_relevante %}
+        <span 
+            class="badge-relevante-wrapper absolute -top-1 -right-1 z-[15] flex items-center justify-center"
+            title="Inspección relevante: Control obligatorio requerido">
+
+            <span class="relative inline-flex items-center justify-center w-4 h-4 rounded-full bg-rose-900 shadow-sm">
+                <svg class="w-2.5 h-2.5 text-white" viewBox="0 0 24 24" fill="currentColor">
+                    <rect x="9.5" y="2" width="5" height="12" rx="2.5"/>
+                    <circle cx="12" cy="19.5" r="2.5"/>
+                </svg>
+            </span>
+        </span>
+        {% endif %}
+
+        <div class="visual-container w-full h-full flex items-center justify-center relative pointer-events-none">
+            {% if mes.valor %}
+                {% for insp in inspecciones %}
+                    {% if mes.valor == insp.id|stringformat:"s" %}
+                        <span class="w-[85%] text-center px-1 py-1 rounded-sm text-white font-medium shadow-sm z-0"
+                                style="background-color: {{ insp.color_inspeccion }}; font-size: 0.85rem; line-height: 1;">
+                            {{ insp.codigo_inspeccion }}
+                        </span>
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
+        </div>
+    </div> </td>
+{% endfor %}
+
+
+
+
+
+
+                                            
+                        <td class="border-r border-b border-gray-200 bg-gray-50 py-1 text-center">
+                            {% if item.total_noti > 0 %}
+                                
+{% if user.is_superuser or user.is_staff %}
+    <a 
+    {% if not modo_actual == 'global' %}
+        {% for a in lista_anios %}
+            {% if anio_seleccionado == a.indice %}href="{% url 'gestion_notificaciones' ccpp.id_ccpp %}?anio={{ a.indice }}&mes=enero"{% endif %}
+        {% endfor %}
+    {% else %}
+        href="{% url 'gestion_notificaciones' ccpp.id_ccpp %}?anio=0&mes=enero"
+    {% endif %}
+    class="block hover:opacity-80 transition-opacity">
+        <div class="inline-flex items-center justify-center w-5 h-5 mx-auto rounded-full bg-green-100 text-green-800 text-xs font-bold border border-green-200"
+            title="Total notificaciones: {{ item.total_noti }}">
+            {{ item.total_noti }}
+        </div>
+    </a>
+{% else %}
+    {# Usuarios normales o no autenticados solo ven el número, sin link #}
+    <div class="inline-flex items-center justify-center w-5 h-5 mx-auto rounded-full bg-green-100 text-green-800 text-xs font-bold border border-green-200"
+        title="Total notificaciones: {{ item.total_noti }}">
+        {{ item.total_noti }}
+    </div>
+{% endif %}
+                                
+                            {% else %}
+                                <div class="w-5 h-5 mx-auto"></div>
+                            {% endif %}
+                        </td>
+
+                        <td class="border-r border-b border-gray-200 bg-gray-50 py-1 text-center">
+                            {% if item.total_resp > 0 %}
+                                <div class="inline-flex items-center justify-center w-5 h-5 mx-auto rounded-full bg-red-100 text-red-800 text-xs font-bold border border-red-200"
+                                    title="Total respuestas: {{ item.total_resp }}">
+                                    {{ item.total_resp }}
+                                </div>
+                            {% else %}
+                                <div class="w-5 h-5 mx-auto"></div>
+                            {% endif %}
+                        </td>
+
+                        <!-- NOTA -->
+                        <td class="excel-td border-r border-b border-gray-200 bg-white cursor-pointer transition-colors py-1 text-center"
+                            data-tipo="nota"
+                            onclick="seleccionarCeldaExcel(this)">
+                            
+                            {% if user.is_superuser %}
+                            <div class="lazy-cell w-full h-full min-h-[32px] flex items-center justify-center relative"
+                                data-ccpp="{{ ccpp.id_ccpp }}"
+                                data-unidad="{{ item.unidad.id_unidad }}"
+                                data-anio="{{ item.anio_relativo }}"
+                                data-campo="nota"
+                                data-valor="{{ item.nota|default:'' }}">
+                                
+                                <div class="visual-container w-full h-full flex items-center justify-center px-1 py-0.5 text-[11px] pointer-events-none">
+                                    {{ item.nota|default:'' }}
+                                </div>
+                            </div>
+                            {% else %}
+                            <div class="px-1 py-0.5 text-[11px]">
+                                {{ item.nota|default:'' }}
+                            </div>
+                            {% endif %}
+                        </td>
+
+                        <!-- OBS -->
+                        <td class="border-b border-gray-200 bg-gray-50">
+                            {{ item.unidad.observacion|default:"-" }}
+                        </td>
+                </tr>
+                {% endfor %}
+
+                </tbody>
+
+                <tfoot class="sticky bottom-0 z-50 bg-gray-100 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
+                    <tr>
+                        {% with total_cols_fijas=6 %} {# Unidad, Año, Noti, Resp, Nota, Obs #}
+                        <td colspan="{{ lista_meses|length|add:total_cols_fijas }}" 
+                            class="border-t border-gray-300 px-4 py-2 text-left">
+                            
+                            <div class="flex items-center gap-6 text-[11px]">
+                                <span class="font-bold text-gray-700 uppercase tracking-wider">
+                                    Resumen General
+                                </span>
+                                
+                                <span class="text-gray-600">
+                                    Total de unidades: 
+                                    <strong class="text-indigo-400">{{ total_unidades }}</strong>
+                                </span>
+
+                            </div>
+
+                        </td>
+                        {% endwith %}
+                    </tr>
+                </tfoot>
+
+            </table>
+
+
+        </div>
+
+
+        
+
+
+    </form>
+</div>
+    {% include "gestion/reportes/form_noti.html" %}
+    {% include "gestion/reportes/form_insp.html" %}
+    {% include "gestion/reportes/form_libroFicha.html" %}
+<style>
+/* Contenedor de la celda */
+.excel-td {
+    position: relative !important;
+}
+
+/* Borde de Excel: Sin fondo, solo el contorno */
+.excel-td.selected-excel::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border: 2px solid #107c41; /* Verde Excel */
+    pointer-events: none;
+    z-index: 20;
+}
+
+/* Input invisible hasta que se edita o tiene valor */
+.insp-input {
+    background: transparent;
+    border: none;
+    text-align: center;
+    width: 85%;
+    font-weight: 600;
+    text-transform: uppercase;
+    outline: none;
+    z-index: 5;
+    position: relative;
+}
+
+/* El botón de combo solo aparece en hover o si la celda está seleccionada */
+.excel-td.selected-excel .btn-excel-dropdown {
+    opacity: 1 !important;
+}
+
+/* Asegurar que la campana esté siempre visible sobre el input */
+.lazy-cell a[title="Gestionar notificación"] {
+    z-index: 25 !important;
+}
+
+
+
+
+.editable-row td {
+    transition: background-color 0.15s ease-in-out, border-color 0.15s ease-in-out;
+}
+
+
+
+
+/* Nuevo color para la fila cuando hay una celda seleccionada */
+/* Nuevo color para la fila cuando hay una celda seleccionada */
+.fila-seleccionada > td {
+    background-color: #e0e7ff !important; /* Indigo-50 */
+    border-color: #c7d2fe !important; /* Indigo-200 para recuperar la línea divisoria */
+}
+
+/* Mostrar íconos y botones adyacentes de la fila solo al estar seleccionada */
+.unidad-link {
+    opacity: 0;
+}
+.fila-seleccionada .unidad-link {
+    opacity: 1;
+}
+
+/* Asegurar que las campanas se vean en la fila seleccionada */
+.campana-noti {
+    opacity: 0;
+}
+.fila-seleccionada .campana-noti,
+.campana-noti:hover {
+    opacity: 1 !important;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+        /* Fondo amarillo suave para celdas pasadas */
+    .mes-pasado {
+        background-color: #fffbeb !important; /* Amarillo muy suave */
+        border-left: 1px solid #fde68a !important;
+        border-right: 1px solid #fde68a !important;
+    }
+    
+    /* Hover especial para celdas pasadas */
+    .mes-pasado:hover {
+        background-color: #fef3c7 !important; /* Amarillo más intenso al hover */
+    }
+    .unidad-separador td {
+        border-top: 1px solid rgba(99, 102, 241, 0.35); /* indigo suave */
+    }
+
+    /* Colores para los cuadros de letras */
+    .letra-M { background: linear-gradient(135deg, #570000 0%, #7a0000 100%); }
+    .letra-E { background: linear-gradient(135deg, #ac0101 0%, #d60000 100%); }
+    .letra-O { background: linear-gradient(135deg, #d97706 0%, #f59e0b 100%); }
+    .letra-T { background: linear-gradient(135deg, #00bc13 0%, #00d91a 100%); }
+    .letra-I { background: linear-gradient(135deg, #006d0b 0%, #008a10 100%); }
+    .letra-P { background: linear-gradient(135deg, #0062ff 0%, #1e7bff 100%); }
+    .letra-C { background: linear-gradient(135deg, #0331c8 0%, #0a41f0 100%); }
+    .letra-S { background: linear-gradient(135deg, #3f04ff 0%, #5c2bff 100%); }
+
+    /* Campana para inspecciones */
+    .cell-bell {
+        position: absolute;
+        top: 2px;
+        right: 2px;
+        border: none;
+        background: rgba(255, 255, 255, 0.9);
+        border-radius: 4px;
+        padding: 2px;
+        opacity: 0;
+        cursor: pointer;
+        color: #3b82f6;
+        transition: opacity 0.15s ease, transform 0.15s ease;
+    }
+
+    .lazy-cell:hover .cell-bell {
+        opacity: 1;
+        transform: scale(1.05);
+    }
+
+    .cell-bell:hover {
+        background-color: rgba(59, 130, 246, 0.1);
+    }
+
+    /* Dropdown de inspección */
+    .insp-dropdown {
+        position: absolute;
+        z-index: 9999;
+        min-width: 220px;
+        max-width: 260px;
+        background-color: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 6px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+        font-size: 0.72rem;
+        overflow: hidden;
+    }
+
+    .insp-dropdown-item {
+        padding: 6px 10px;
+        cursor: pointer;
+        white-space: nowrap;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .insp-dropdown-item:hover {
+        background-color: #f9fafb;
+    }
+
+    /* Animación de guardado */
+    .lazy-cell.saving {
+        position: relative;
+        pointer-events: none;
+        opacity: 0.6;
+    }
+
+    .lazy-cell.saving::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background-color: rgba(255, 255, 255, 0.6);
+        border-radius: 4px;
+        z-index: 2;
+    }
+
+    .lazy-cell.saving::before {
+        content: "";
+        position: absolute;
+        width: 16px;
+        height: 16px;
+        border: 2px solid #e5e7eb;
+        border-top-color: #3b82f6;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 3;
+    }
+
+    @keyframes spin {
+        to {
+            transform: translate(-50%, -50%) rotate(360deg);
+        }
+    }
+
+
+
+
+
+/* =========================================
+   Redimensionamiento de Columnas
+========================================= */
+th {
+    position: relative; /* Necesario para ubicar el tirador */
+}
+
+.redimensionador {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 6px;
+    height: 100%;
+    cursor: col-resize;
+    user-select: none;
+    z-index: 60; /* Mayor que el z-index de los th para que se pueda clickear */
+    transition: background-color 0.2s;
+}
+
+/* Color azul al pasar el mouse o al estar arrastrando para dar feedback visual */
+.redimensionador:hover,
+.redimensionador.activo {
+    background-color: #3b82f6;
+    opacity: 0.5;
+}
+
+
+
+
+
+</style>
+
+<script>
+
+
+
+
+
+
+
+
+
+
+
+let tdSeleccionadoActual = null;
+
+
+// Validar lo que el usuario escribe a mano en la celda
+function validarInputInspeccion(inputElement) {
+    const celda = inputElement.closest('.lazy-cell');
+    if (!celda) return;
+
+    const valorTipeado = inputElement.value.trim().toUpperCase();
+    const valorAnterior = celda.dataset.valor;
+
+    // Buscar si la letra escrita corresponde a una inspección válida (M, E, O, etc.)
+    // inspeccionesData viene de tu variable global en JS
+    const inspeccionEncontrada = inspeccionesData.find(i => i.codigo.toUpperCase() === valorTipeado);
+
+    if (inspeccionEncontrada) {
+        // Formatear el input con el color correcto
+        inputElement.value = inspeccionEncontrada.codigo;
+        inputElement.style.backgroundColor = inspeccionEncontrada.color;
+        inputElement.style.color = 'white';
+        
+        // Guardar solo si el valor cambió
+        if (valorAnterior !== inspeccionEncontrada.id) {
+            celda.dataset.valor = inspeccionEncontrada.id;
+            guardarCelda(celda, inspeccionEncontrada.id);
+        }
+    } else {
+        // Si no existe, limpiar la celda
+        inputElement.value = '';
+        inputElement.style.backgroundColor = 'transparent';
+        inputElement.style.color = 'inherit';
+
+        if (valorAnterior !== '') {
+            celda.dataset.valor = '';
+            // Remover la campana si existía
+            celda.querySelectorAll('.campana-noti').forEach(c => c.remove());
+            
+            guardarCelda(celda, '');
+        }
+    }
+}
+
+
+
+// Actualizar el listener global de clics para usar desactivarCelda y auto-seleccionar inicio
+document.addEventListener('click', function(e) {
+    const filaEditable = e.target.closest('.editable-row');
+    const celdaExcel = e.target.closest('.excel-td');
+    const dropdown = e.target.closest('.insp-dropdown');
+
+    // NUEVO COMPORTAMIENTO: Si se hace clic en una fila, pero en una celda no editable
+    if (filaEditable && !celdaExcel && !dropdown) {
+        // Encontrar la primera celda editable (que corresponde a Enero)
+        const primeraCeldaEditable = filaEditable.querySelector('.excel-td');
+        if (primeraCeldaEditable) {
+            seleccionarCeldaExcel(primeraCeldaEditable);
+            return; // Detenemos la ejecución para que no se desactive abajo
+        }
+    }
+
+    // COMPORTAMIENTO ORIGINAL: Si hacemos clic fuera de la tabla totalmente
+    if (!celdaExcel && !dropdown) {
+        if (tdSeleccionadoActual) {
+            desactivarCelda(tdSeleccionadoActual);
+            tdSeleccionadoActual = null;
+        }
+    }
+});
+
+
+
+
+
+
+function seleccionarCeldaExcel(tdElement) {
+    if (!tdElement || !tdElement.classList.contains('excel-td')) return;
+    
+    // Si ya está seleccionada, no hacemos nada
+    if (tdSeleccionadoActual === tdElement) return;
+
+    // 1. Limpiar/destruir input de la celda anterior
+    if (tdSeleccionadoActual) {
+        desactivarCelda(tdSeleccionadoActual);
+    }
+    
+    tdSeleccionadoActual = tdElement;
+    tdElement.classList.add('selected-excel');
+    
+    // 2. Sombrear fila actual
+    const tr = tdElement.closest('tr');
+    if (tr) tr.classList.add('fila-seleccionada');
+
+    // 3. Crear input y botón de forma dinámica
+    activarCelda(tdElement);
+}
+
+
+
+
+
+function activarCelda(td) {
+    const lazyCell = td.querySelector('.lazy-cell');
+
+    if (!lazyCell) {
+        return;
+    }
+
+    const esNota = td.dataset.tipo === 'nota';
+    const visual = lazyCell.querySelector('.visual-container');
+
+    if (visual) {
+        visual.style.display = 'none';
+    }
+
+    const valorActual = lazyCell.dataset.valor || '';
+    const input = document.createElement('input');
+
+    input.type = 'text';
+
+    if (esNota) {
+        input.className =
+            'nota-input w-full h-full bg-white px-1 py-0.5 '
+            + 'text-[11px] focus:outline-none text-center '
+            + 'z-0 absolute inset-0';
+
+        input.value = valorActual;
+
+        const guardarNotaActual = () => {
+            const nuevoValor = input.value.trim();
+            const valorAnterior = lazyCell.dataset.valor || '';
+
+            if (nuevoValor === valorAnterior) {
+                return;
+            }
+
+            lazyCell.dataset.valor = nuevoValor;
+
+            guardarCelda(
+                lazyCell,
+                nuevoValor
+            );
+        };
+
+        input.addEventListener('blur', guardarNotaActual);
+
+        input.addEventListener('keydown', function (evento) {
+            if (evento.key === 'Enter') {
+                evento.preventDefault();
+                guardarNotaActual();
+                input.blur();
+            }
+        });
+
+        lazyCell.appendChild(input);
+    } else {
+        let codigo = '';
+        let color = 'transparent';
+        let fontColor = 'inherit';
+
+        if (valorActual) {
+            const inspeccion = inspeccionesData.find(
+                item => item.id === valorActual
+            );
+
+            if (inspeccion) {
+                codigo = inspeccion.codigo;
+                color = inspeccion.color;
+                fontColor = 'white';
+            }
+        }
+
+        input.className =
+            'insp-input w-[85%] absolute text-center px-1 py-1 '
+            + 'rounded-sm font-medium outline-none '
+            + 'focus:bg-white focus:text-slate-800 '
+            + 'transition-colors uppercase z-0';
+
+        input.style.backgroundColor = color;
+        input.style.color = fontColor;
+        input.style.fontSize = '0.85rem';
+        input.value = codigo;
+
+        input.addEventListener('blur', function () {
+            setTimeout(() => {
+                if (
+                    document.activeElement !== input
+                    && !dropdownActivo
+                ) {
+                    validarInputInspeccion(this);
+                }
+            }, 150);
+        });
+
+        input.addEventListener('keydown', function (evento) {
+            if (evento.key === 'Enter') {
+                evento.preventDefault();
+                input.blur();
+            }
+        });
+
+        const boton = document.createElement('button');
+
+        boton.type = 'button';
+        boton.className =
+            'btn-excel-dropdown absolute right-0 top-0 bottom-0 '
+            + 'w-[16px] bg-slate-100 border-l border-slate-300 '
+            + 'hover:bg-slate-200 flex items-center justify-center z-10';
+
+        boton.innerHTML = `
+            <svg width="10" height="10"
+                 viewBox="0 0 24 24"
+                 fill="none"
+                 stroke="#475569"
+                 stroke-width="3"
+                 stroke-linecap="round"
+                 stroke-linejoin="round">
+                <path d="M6 9l6 6 6-6"/>
+            </svg>
+        `;
+
+        boton.addEventListener(
+            'mousedown',
+            evento => evento.preventDefault()
+        );
+
+        boton.addEventListener('click', evento => {
+            evento.stopPropagation();
+            abrirDropdown(lazyCell);
+        });
+
+        lazyCell.appendChild(input);
+        lazyCell.appendChild(boton);
+    }
+
+    input.focus();
+
+    if (!esNota) {
+        input.select();
+    }
+}
+
+
+
+function desactivarCelda(td) {
+    td.classList.remove('selected-excel');
+
+    const tr = td.closest('tr');
+
+    if (tr) {
+        tr.classList.remove('fila-seleccionada');
+    }
+
+    const lazyCell = td.querySelector('.lazy-cell');
+
+    if (!lazyCell) {
+        return;
+    }
+
+    const esNota = td.dataset.tipo === 'nota';
+    const input = lazyCell.querySelector('input');
+    const boton = lazyCell.querySelector('.btn-excel-dropdown');
+
+    if (input) {
+        if (esNota) {
+            const nuevoValor = input.value.trim();
+            const valorAnterior = lazyCell.dataset.valor || '';
+
+            if (nuevoValor !== valorAnterior) {
+                lazyCell.dataset.valor = nuevoValor;
+                guardarCelda(lazyCell, nuevoValor);
+            }
+        } else {
+            validarInputInspeccion(input);
+        }
+
+        input.remove();
+    }
+
+    if (boton) {
+        boton.remove();
+    }
+
+    let visual = lazyCell.querySelector('.visual-container');
+
+    if (!visual) {
+        visual = document.createElement('div');
+        lazyCell.insertBefore(
+            visual,
+            lazyCell.firstChild
+        );
+    }
+
+    visual.innerHTML = '';
+    visual.style.display = 'flex';
+
+    const valorActual = lazyCell.dataset.valor || '';
+
+    if (esNota) {
+        visual.className =
+            'visual-container w-full h-full flex items-center '
+            + 'justify-center px-1 py-0.5 text-[11px] '
+            + 'pointer-events-none';
+
+        visual.textContent = valorActual;
+    } else {
+        visual.className =
+            'visual-container w-full h-full flex items-center '
+            + 'justify-center relative pointer-events-none';
+
+        if (valorActual) {
+            const inspeccion = inspeccionesData.find(
+                item => item.id === valorActual
+            );
+
+            if (inspeccion) {
+                visual.innerHTML = `
+                    <span
+                        class="w-[85%] text-center px-1 py-1 rounded-sm
+                               text-white font-medium shadow-sm z-0"
+                        style="
+                            background-color: ${inspeccion.color};
+                            font-size: 0.85rem;
+                            line-height: 1;
+                        ">
+                        ${inspeccion.codigo}
+                    </span>
+                `;
+            }
+        }
+    }
+}
+
+
+
+
+
+
+
+function seleccionarInspeccion(item) {
+    if (!celdaActiva) return;
+    const valor = item.dataset.value;
+    const codigo = item.dataset.codigo || '';
+    const color = item.dataset.color || '';
+
+    // NUEVO: Remover la campana si se seleccionó "Sin inspección" (valor vacío)
+    if (!valor) {
+        celdaActiva.querySelectorAll('.campana-noti').forEach(c => c.remove());
+    }
+
+    // Actualizar los datos nativos de la celda
+    celdaActiva.dataset.valor = valor || '';
+
+    // Actualizar visualmente el input dinámico en vivo sin duplicar
+    const input = celdaActiva.querySelector('input');
+    if (input) {
+        if (valor) {
+            input.value = codigo;
+            input.style.backgroundColor = color;
+            input.style.color = 'white';
+        } else {
+            input.value = '';
+            input.style.backgroundColor = 'transparent';
+            input.style.color = 'inherit';
+        }
+    }
+
+    guardarCelda(celdaActiva, valor);
+    cerrarDropdown();
+}
+
+
+// =====================================================================
+// 🔹 NAVEGACIÓN TIPO EXCEL (CORREGIDA)
+// =====================================================================
+document.addEventListener('keydown', function(e) {
+    if (dropdownActivo || !tdSeleccionadoActual) return;
+    
+    const teclasNavegacion = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Enter', 'Tab'];
+    if (!teclasNavegacion.includes(e.key)) return;
+
+    // ELIMINADO: El return que bloqueaba la navegación si era tipo 'nota'
+    
+    const row = tdSeleccionadoActual.closest('tr');
+    if (!row) return;
+
+    const cellIndex = Array.from(row.children).indexOf(tdSeleccionadoActual);
+    const rowIndex = Array.from(row.parentElement.children).indexOf(row);
+    const tbody = row.parentElement;
+    let nextTd = null;
+
+    // --- LÓGICA DE NAVEGACIÓN ---
+
+    if (e.key === 'ArrowRight' || (e.key === 'Tab' && !e.shiftKey)) {
+        // Buscar la siguiente celda .excel-td a la derecha
+        let nextIndex = cellIndex + 1;
+        while (nextIndex < row.children.length) {
+            if (row.children[nextIndex].classList.contains('excel-td')) {
+                nextTd = row.children[nextIndex];
+                break;
+            }
+            nextIndex++;
+        }
+    } else if (e.key === 'ArrowLeft' || (e.key === 'Tab' && e.shiftKey)) {
+        // Buscar la siguiente celda .excel-td a la izquierda
+        let prevIndex = cellIndex - 1;
+        while (prevIndex >= 0) {
+            if (row.children[prevIndex].classList.contains('excel-td')) {
+                nextTd = row.children[prevIndex];
+                break;
+            }
+            prevIndex--;
+        }
+    } else if (e.key === 'ArrowDown' || e.key === 'Enter') {
+        // Navegar hacia abajo
+        const nextRow = tbody.children[rowIndex + 1];
+        if (nextRow) nextTd = nextRow.children[cellIndex];
+    } else if (e.key === 'ArrowUp') {
+        // Navegar hacia arriba
+        const prevRow = tbody.children[rowIndex - 1];
+        if (prevRow) nextTd = prevRow.children[cellIndex];
+    }
+
+    // --- EJECUCIÓN DEL CAMBIO ---
+
+    // Verificamos que la celda destino sea válida y tenga la clase permitida
+    if (nextTd && nextTd.classList.contains('excel-td')) {
+        // Si estamos en una nota y usamos flechas laterales, 
+        // solo saltamos si no estamos editando o si es Tab.
+        // Pero para comportamiento Excel puro, saltamos siempre:
+        e.preventDefault();
+        e.stopPropagation();
+        seleccionarCeldaExcel(nextTd); 
+    }
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    // =====================================================================
+    // 🔹 VARIABLES GLOBALES Y CONFIGURACIÓN
+    // =====================================================================
+    const inspeccionesData = [
+        {% for insp in inspecciones %}
+        {
+            id: "{{ insp.id }}",
+            codigo: "{{ insp.codigo_inspeccion }}",
+            nombre: "{{ insp.nombre_inspeccion }}",
+            color: "{{ insp.color_inspeccion }}"
+        },
+        {% endfor %}
+    ];
+
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    let dropdownActivo = null;
+    let celdaActiva = null;
+    let ordenUnidadActivo = false;
+    let filasOrdenOriginal = [];
+
+    // =====================================================================
+    // 🔹 UTILIDADES GENERALES
+    // =====================================================================
+
+    /**
+     * Normaliza texto para búsquedas (elimina acentos, caracteres especiales)
+     */
+    function normalizarTexto(texto = '') {
+        return texto
+            .toLowerCase()
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .replace(/[^a-z0-9\s]/g, " ")
+            .replace(/\s+/g, " ")
+            .trim();
+    }
+
+    // =====================================================================
+    // 🔹 GESTIÓN DEL DROPDOWN DE INSPECCIONES
+    // =====================================================================
+
+    /**
+     * Abre el dropdown de inspecciones posicionado automáticamente
+     */
+    function abrirDropdown(cell) {
+        cerrarDropdown();
+        celdaActiva = cell;
+
+        const rect = cell.getBoundingClientRect();
+        const dropdown = document.createElement('div');
+        dropdown.className = 'insp-dropdown';
+
+        // Construir contenido del dropdown
+        dropdown.innerHTML = `
+            <div class="insp-dropdown-item" data-value="">
+                <small>Sin inspección</small>
+            </div>
+        `;
+
+        inspeccionesData.forEach(i => {
+            dropdown.innerHTML += `
+                <div class="insp-dropdown-item"
+                    data-value="${i.id}"
+                    data-codigo="${i.codigo}"
+                    data-color="${i.color}">
+                    <strong style="color: ${i.color};">${i.codigo}</strong>
+                    <small>${i.nombre}</small>
+                </div>
+            `;
+        });
+
+        document.body.appendChild(dropdown);
+
+        // Posicionamiento inteligente (arriba/abajo según espacio disponible)
+        const dropdownHeight = dropdown.offsetHeight;
+        const viewportHeight = window.innerHeight;
+        const espacioAbajo = viewportHeight - rect.bottom;
+        const espacioArriba = rect.top;
+
+        let top;
+        if (espacioAbajo >= dropdownHeight + 8) {
+            top = rect.bottom + window.scrollY + 4;
+        } else if (espacioArriba >= dropdownHeight + 8) {
+            top = rect.top + window.scrollY - dropdownHeight - 4;
+        } else {
+            top = window.scrollY + viewportHeight - dropdownHeight - 8;
+        }
+
+        dropdown.style.top = `${top}px`;
+        dropdown.style.left = `${rect.left + window.scrollX}px`;
+
+        // Asignar event listeners a los items
+        dropdown.querySelectorAll('.insp-dropdown-item').forEach(item => {
+            item.addEventListener('click', e => {
+                e.stopPropagation();
+                seleccionarInspeccion(item);
+            });
+        });
+
+        dropdownActivo = dropdown;
+    }
+
+    /**
+     * Cierra el dropdown activo
+     */
+    function cerrarDropdown() {
+        if (dropdownActivo) {
+            dropdownActivo.remove();
+            dropdownActivo = null;
+            celdaActiva = null;
+        }
+    }
+
+
+
+
+    // =====================================================================
+    // 🔹 GESTIÓN DE CAMPANAS (NOTIFICACIONES)
+    // =====================================================================
+
+/**
+ * Inicializa los botones de campana SOLO en celdas de meses con inspección guardada
+ */
+/**
+ * Inicializa los botones de campana en celdas de meses con inspección guardada
+ * Aplica tanto para Administradores (.lazy-cell) como para Staff (.readonly-cell)
+ */
+function inicializarCampanas() {
+    const anioBase = {{ ccpp.fecha_entrega.year|default:2024 }}; // Asegúrate de pasar esto desde Django
+    
+    // Seleccionamos tanto las celdas editables (Admin) como las de solo lectura (Staff)
+    document.querySelectorAll('.lazy-cell, .readonly-cell').forEach(cell => {
+        const valor = cell.dataset.valor;
+        const campo = cell.dataset.campo; // Esto será el nombre del mes o 'nota'
+        
+        // Solo procesar si:
+        // 1. Hay un valor guardado (inspección asignada)
+        // 2. Es una celda de mes (NO es 'nota')
+        // 3. No tiene ya una campana creada para evitar duplicados (.campana-noti)
+        if (!valor || campo === 'nota' || cell.querySelector('.campana-noti')) return;
+
+        // Construir URL para notificación
+        const ccppId = cell.dataset.ccpp;
+        const unidadId = cell.dataset.unidad;
+        const anioRelativo = parseInt(cell.dataset.anio);
+        const mesNombre = cell.dataset.campo;
+        const anioCalendario = anioRelativo; // O la lógica que uses para calcular el año real
+       
+        const notificacionUrl = `/notificaciones/${ccppId}/auto/${anioCalendario}/${mesNombre}/${unidadId}/`;
+
+        // Crear el botón de campana (enlace)
+        const bell = document.createElement('a');
+        bell.href = notificacionUrl;
+        bell.className = `
+            campana-noti
+            absolute
+            top-0.5
+            left-0.5
+            z-10
+            flex items-center justify-center
+            w-4 h-4
+            rounded
+            bg-white/90
+            text-indigo-600
+            transition-opacity
+            hover:bg-indigo-100
+        `;
+        bell.title = 'Gestionar notificación';
+        bell.innerHTML = `
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+            </svg>
+        `;
+        
+        // Agregar la campana a la celda
+        cell.appendChild(bell);
+    });
+
+}
+
+
+
+/**
+ * Construye el HTML del badge de "inspección relevante".
+ */
+function crearBadgeRelevanteHTML() {
+    return `
+        <span class="badge-relevante-wrapper absolute -top-1 -right-1 z-[15] flex items-center justify-center pointer-events-none"
+              title="Inspección relevante: Control obligatorio requerido">
+            <span class="relative inline-flex items-center justify-center w-4 h-4 rounded-full bg-rose-900 shadow-sm">
+                <svg class="w-2.5 h-2.5 text-white" viewBox="0 0 24 24" fill="currentColor">
+                    <rect x="9.5" y="2" width="5" height="12" rx="2.5"/>
+                    <circle cx="12" cy="19.5" r="2.5"/>
+                </svg>
+            </span>
+        </span>`;
+}
+
+/**
+ * Muestra u oculta el badge de "inspección relevante" en una celda
+ * según el valor actual y el set de inspecciones relevantes precalculado
+ * en el atributo data-relevantes.
+ */
+function actualizarBadgeRelevante(cell, valor) {
+    if (!cell) return;
+
+    // Siempre removemos el badge existente antes de re-evaluar
+    const badgeExistente = cell.querySelector('.badge-relevante-wrapper');
+    if (badgeExistente) badgeExistente.remove();
+
+    if (!valor) return; // Sin inspección asignada, no hay nada que mostrar
+
+    const relevantesRaw = cell.dataset.relevantes || '';
+    if (!relevantesRaw) return;
+
+    const relevantes = relevantesRaw.split(',').filter(Boolean);
+    if (relevantes.includes(String(valor))) {
+        cell.insertAdjacentHTML('afterbegin', crearBadgeRelevanteHTML());
+    }
+}
+    // =====================================================================
+    // 🔹 PERSISTENCIA DE DATOS (AJAX)
+    // =====================================================================
+
+    // =====================================================================
+    // 🔹 GUARDAR CELDA (INSPECCIONES)
+    // =====================================================================
+
+    /**
+    * Guarda el valor de una celda (inspección) mediante AJAX
+    */
+function guardarCelda(cell, valor) {
+    if (!cell) return;
+
+    const data = new FormData();
+    data.append('csrfmiddlewaretoken', csrfToken);
+    data.append('id_ccpp', cell.dataset.ccpp);
+    data.append('id_unidad', cell.dataset.unidad);
+    data.append('anio', cell.dataset.anio);
+    data.append('campo', cell.dataset.campo);
+    data.append('valor', valor || '');
+
+    cell.classList.add('saving');
+
+    fetch("{% url 'guardar_celda_cronograma' ccpp.id_ccpp %}", {
+        method: 'POST',
+        body: data
+    })
+    .then(response => {
+        if (!response.ok) throw new Error('Error en la respuesta del servidor');
+        return response.json();
+    })
+    .then(data => {
+        if (!data.ok) throw new Error(data.error || 'Error al guardar');
+
+        // Solo aplica a celdas de mes (no a la celda de nota)
+        if (cell.dataset.campo !== 'nota') {
+            // 🔹 Re-evaluar el badge de "inspección relevante" con el valor recién guardado
+            actualizarBadgeRelevante(cell, valor);
+
+            if (valor) {
+                inicializarCampanas();
+            } else {
+                // Se quitó la inspección: removemos la campana si existía
+                cell.querySelectorAll('.campana-noti').forEach(c => c.remove());
+            }
+        }
+    })
+    .catch(err => {
+        console.error('Error guardando celda:', err);
+
+        // Revertir visualmente (opcional)
+        setTimeout(() => {
+            cell.innerHTML = '';
+            cell.dataset.valor = '';
+        }, 300);
+    })
+    .finally(() => {
+        setTimeout(() => {
+            cell.classList.remove('saving');
+        }, 300);
+    });
+}
+
+
+
+
+    // =====================================================================
+    // 🔹 SISTEMA DE FILTRADO
+    // =====================================================================
+
+    /**
+     * Aplica todos los filtros activos a las filas de la tabla
+     */
+    function aplicarFiltros() {
+        const filtroUnidad = document.getElementById('filtro-unidad');
+        const filtroCapitulo = document.getElementById('filtro-capitulo');
+        const filtroInspeccion = document.getElementById('filtro-inspeccion');
+
+        const u = normalizarTexto(filtroUnidad?.value);
+        const c = normalizarTexto(filtroCapitulo?.value);
+        const i = filtroInspeccion?.value;
+
+        document.querySelectorAll('.editable-row').forEach(fila => {
+            const unidad = normalizarTexto(fila.dataset.unidad);
+            const capitulo = normalizarTexto(fila.dataset.capitulo);
+
+            let visible = unidad.includes(u) && capitulo.includes(c);
+
+            if (visible && i) {
+                if (i === '__con__') {
+                    visible = Array.from(fila.querySelectorAll('.lazy-cell'))
+                        .some(cell => cell.dataset.valor);
+                } else if (i === '__sin__') {
+                    visible = !Array.from(fila.querySelectorAll('.lazy-cell'))
+                        .some(cell => cell.dataset.valor);
+                } else {
+                    visible = Array.from(fila.querySelectorAll('.lazy-cell'))
+                        .some(cell => cell.dataset.valor === i);
+                }
+            }
+
+            fila.style.display = visible ? 'table-row' : 'none';
+        });
+    }
+
+    // =====================================================================
+    // 🔹 ORDENACIÓN Y VISIBILIDAD
+    // =====================================================================
+
+    /**
+     * Ordena las unidades alfabéticamente
+     */
+    function ordenarUnidades() {
+        const thOrdenUnidad = document.getElementById('ordenar-unidad');
+        const iconoOrden = document.getElementById('icono-orden-unidad');
+
+        if (!thOrdenUnidad) return;
+
+        thOrdenUnidad.addEventListener('click', () => {
+            const tbody = document.querySelector('table tbody');
+
+            if (!ordenUnidadActivo) {
+                // 🔹 ORDENAR ALFABÉTICAMENTE
+                const filas = Array.from(tbody.querySelectorAll('.editable-row'));
+
+                filas.sort((a, b) => {
+                    const ua = normalizarTexto(a.dataset.unidad);
+                    const ub = normalizarTexto(b.dataset.unidad);
+                    return ua.localeCompare(ub);
+                });
+
+                filas.forEach(fila => tbody.appendChild(fila));
+
+                iconoOrden.textContent = '⬎';
+                ordenUnidadActivo = true;
+
+            } else {
+                // 🔹 RESTAURAR ORDEN ORIGINAL DEL SERVIDOR
+                filasOrdenOriginal.forEach(fila => tbody.appendChild(fila));
+
+                iconoOrden.textContent = '⬍';
+                ordenUnidadActivo = false;
+            }
+        });
+    }
+
+
+    /**
+     * Controla la visibilidad de los textos de capítulos
+     */
+    function toggleCapitulosVisibilidad() {
+        const toggleCapitulos = document.getElementById('toggle-capitulos');
+        if (toggleCapitulos) {
+            document.querySelectorAll('.capitulo-text')
+                .forEach(el => el.style.display = toggleCapitulos.checked ? 'block' : 'none');
+
+            toggleCapitulos.addEventListener('change', () => {
+                document.querySelectorAll('.capitulo-text')
+                    .forEach(el => el.style.display = toggleCapitulos.checked ? 'block' : 'none');
+            });
+        }
+    }
+
+    // =====================================================================
+    // 🔹 NAVEGACIÓN POR AÑOS
+    // =====================================================================
+
+    /**
+     * Navega entre los años disponibles
+     */
+
+    function navegarAnio(direccion) {
+        const filtroAnio = document.getElementById('filtro-anio');
+        const opciones = Array.from(filtroAnio.options).filter(o => o.value !== '');
+        const actual = filtroAnio.value;
+        const index = opciones.findIndex(o => o.value === actual);
+
+        let nuevoIndex = index + direccion;
+
+        if (index === -1 && direccion === 1) nuevoIndex = 0;
+        if (index === -1 && direccion === -1) nuevoIndex = opciones.length - 1;
+
+        if (nuevoIndex >= 0 && nuevoIndex < opciones.length) {
+            filtroAnio.value = opciones[nuevoIndex].value;
+            filtroAnio.dispatchEvent(new Event('change'));
+        }
+    }
+
+
+    function limpiarFiltros() {
+    const filtroUnidad = document.getElementById('filtro-unidad');
+    const filtroCapitulo = document.getElementById('filtro-capitulo');
+    const filtroInspeccion = document.getElementById('filtro-inspeccion');
+
+    if (filtroUnidad) filtroUnidad.value = '';
+    if (filtroCapitulo) filtroCapitulo.value = '';
+    if (filtroInspeccion) filtroInspeccion.value = '';
+
+    aplicarFiltros();
+}
+
+
+    // =====================================================================
+    // 🔹 INICIALIZACIÓN Y EVENT LISTENERS
+    // =====================================================================
+
+    /**
+     * Configura todos los event listeners del sistema
+     */
+    function configurarEventListeners() {
+        // Click en celdas para abrir dropdown
+        document.querySelectorAll('.lazy-cell').forEach(cell => {
+            cell.addEventListener('click', e => {
+                // Evitamos que el clic se propague al documento
+                e.stopPropagation(); 
+                const td = cell.closest('.excel-td');
+                if (td) seleccionarCeldaExcel(td);
+            });
+        });
+
+        document.addEventListener('focusin', e => {
+            if (e.target.classList.contains('insp-input')) {
+                const td = e.target.closest('.excel-td');
+                if (td && tdSeleccionadoActual !== td) {
+                    seleccionarCeldaExcel(td);
+                }
+            }
+            if (dropdownActivo && !dropdownActivo.contains(e.target)) {
+                cerrarDropdown();
+            }
+        });
+
+        // Cierre del dropdown en varios escenarios
+        window.addEventListener('scroll', cerrarDropdown, true);
+        window.addEventListener('resize', cerrarDropdown);
+        window.addEventListener('blur', cerrarDropdown);
+
+        document.addEventListener('mousedown', e => {
+            if (dropdownActivo && !dropdownActivo.contains(e.target)) {
+                cerrarDropdown();
+            }
+        }, true);
+
+        document.addEventListener('focusin', e => {
+            if (dropdownActivo && !dropdownActivo.contains(e.target)) {
+                cerrarDropdown();
+            }
+        });
+
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape') cerrarDropdown();
+        });
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) cerrarDropdown();
+        });
+
+        // Filtros
+        const filtroUnidad = document.getElementById('filtro-unidad');
+        const filtroCapitulo = document.getElementById('filtro-capitulo');
+        const filtroInspeccion = document.getElementById('filtro-inspeccion');
+
+        [filtroUnidad, filtroCapitulo, filtroInspeccion].forEach(el => {
+            el?.addEventListener('input', aplicarFiltros);
+            el?.addEventListener('change', aplicarFiltros);
+        });
+
+        // Navegación por años
+        const btnPrev = document.getElementById('anio-prev');
+        const btnNext = document.getElementById('anio-next');
+        const filtroAnio = document.getElementById('filtro-anio');
+
+        btnPrev?.addEventListener('click', () => navegarAnio(-1));
+        btnNext?.addEventListener('click', () => navegarAnio(1));
+
+        filtroAnio?.addEventListener('change', () => {
+            const url = new URL(window.location.href);
+            if (filtroAnio.value === '') {
+                url.searchParams.delete('anio');
+            } else {
+                url.searchParams.set('anio', filtroAnio.value);
+            }
+            window.location.href = url.toString();
+        });
+
+
+
+        // Ordenación y toggles
+        ordenarUnidades();
+        toggleCapitulosVisibilidad();
+
+        const btnLimpiar = document.getElementById('btn-limpiar-filtros');
+        btnLimpiar?.addEventListener('click', limpiarFiltros);
+
+    }
+
+
+
+
+
+    // =====================================================================
+    // 🔹 INICIALIZACIÓN AL CARGAR LA PÁGINA
+    // =====================================================================
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const tbody = document.querySelector('table tbody');
+
+        // Guardar el orden EXACTO que vino del servidor
+        filasOrdenOriginal = Array.from(tbody.children);
+
+        inicializarCampanas();
+        configurarEventListeners();
+        inicializarRedimensionColumnas();
+    });
+
+
+
+    function cambiarModoVista(modo) {
+        const url = new URL(window.location.href);
+        
+        if (modo === 'global') {
+            // Vista global: mostrar todos los años
+            url.searchParams.set('modo', 'global');
+            url.searchParams.delete('anio'); // Eliminar año si existe
+        } else {
+            // Vista anual: mantener el año actual o ir al año por defecto
+            url.searchParams.set('modo', 'anual');
+            
+            // Si no hay año seleccionado, cargar el año actual automáticamente
+            if (!url.searchParams.has('anio')) {
+                const selectAnio = document.getElementById('filtro-anio');
+                if (selectAnio) {
+                    url.searchParams.set('anio', selectAnio.value);
+                }
+            }
+        }
+        
+        window.location.href = url.toString();
+    }
+
+    // Cambiar de año en modo anual
+    document.getElementById('filtro-anio')?.addEventListener('change', function() {
+        const url = new URL(window.location.href);
+        url.searchParams.set('anio', this.value);
+        url.searchParams.set('modo', 'anual'); // Asegurar que está en modo anual
+        window.location.href = url.toString();
+    });
+
+
+
+
+
+
+
+    // =====================================================================
+// 🔹 REDIMENSIONAMIENTO DE COLUMNAS TIPO EXCEL
+// =====================================================================
+
+function inicializarRedimensionColumnas() {
+    // Seleccionamos todas las cabeceras de la tabla
+    const columnas = document.querySelectorAll('th');
+
+    columnas.forEach(columna => {
+        // Creamos el elemento div que servirá como "tirador"
+        const redimensionador = document.createElement('div');
+        redimensionador.classList.add('redimensionador');
+        
+        // Lo añadimos al th
+        columna.appendChild(redimensionador);
+
+        // Variables para guardar el estado del arrastre
+        let xInicial = 0;
+        let anchoInicial = 0;
+
+        // Evento: Al hacer clic en el redimensionador (Inicia el arrastre)
+        const iniciarArrastre = function(e) {
+            e.preventDefault();
+            
+            xInicial = e.clientX;
+            anchoInicial = parseInt(window.getComputedStyle(columna).width, 10);
+            redimensionador.classList.add('activo');
+
+            document.addEventListener('mousemove', arrastrar);
+            document.addEventListener('mouseup', detenerArrastre);
+        };
+
+        // Evento: Al mover el mouse
+        const arrastrar = function(e) {
+            const diferenciaX = e.clientX - xInicial;
+            const nuevoAncho = anchoInicial + diferenciaX;
+
+            if (nuevoAncho > 30) {
+                columna.style.width = `${nuevoAncho}px`;
+                columna.style.minWidth = `${nuevoAncho}px`;
+            }
+        };
+
+        // Evento: Al soltar el clic
+        const detenerArrastre = function() {
+            redimensionador.classList.remove('activo');
+            document.removeEventListener('mousemove', arrastrar);
+            document.removeEventListener('mouseup', detenerArrastre);
+        };
+
+        // NUEVO Evento: Al hacer doble clic para restaurar el ancho
+        const restaurarAncho = function(e) {
+            e.preventDefault();
+            e.stopPropagation(); // Evita que se seleccione texto por accidente
+            
+            // Limpiamos los estilos en línea para que vuelva a su ancho por defecto
+            columna.style.width = '';
+            columna.style.minWidth = '';
+        };
+
+        // Asignamos los eventos al redimensionador
+        redimensionador.addEventListener('mousedown', iniciarArrastre);
+        redimensionador.addEventListener('dblclick', restaurarAncho);
+    });
+}
+
+
+
+</script>
+{% endblock %}
+
+
+
+
+

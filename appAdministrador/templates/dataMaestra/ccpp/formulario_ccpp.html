@@ -1,0 +1,704 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clep - {% if es_edicion %}Editar CCPP{% else %}Nueva CCPP{% endif %}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/estiloGlobal.css' %}">
+    <link rel="icon" type="image/png" href="{% static 'img/icono.png' %}">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Poppins', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-slate-50 font-sans antialiased text-slate-900">
+    {% include 'base/mensajes.html' %}
+    
+    <div class="flex h-screen overflow-hidden">
+        
+        <!-- Sidebar -->
+        <aside id="sidebar-principal" class="fixed inset-y-0 left-0 w-64 bg-white shadow-xl flex flex-col z-50 border-r border-indigo-50 h-full flex-shrink-0 transition-transform duration-300 transform -translate-x-full lg:relative lg:translate-x-0">
+            
+            <div class="p-4 border-b border-indigo-50 relative">
+                <div class="absolute left-4 top-6">
+                    <a href="{% url 'ccpp' %}" class="text-slate-400 hover:text-indigo-600 transition-colors flex items-center">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                        </svg>
+                    </a>
+                </div>
+
+                <div class="flex flex-col items-center">
+                    <a href="{% url 'panel_principal' %}" class="space-x-3">
+                        <div class="flex items-center gap-3">
+                            <div class="flex-shrink-0">
+                                <img src="{% static 'img/logo.png' %}" 
+                                    alt="Logo clep" 
+                                    class="w-32 h-16 object-contain drop-shadow-sm transition-transform duration-300 hover:scale-110">
+                            </div>
+                        </div>
+                    </a>
+                </div>
+
+                <div class="absolute right-4 top-5 lg:hidden">
+                    <button onclick="alternarMenu()" class="p-2 text-slate-400 hover:text-red-500">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <nav class="flex-1 px-3 py-4 overflow-y-auto">
+                
+                <div class="bg-white rounded-xl border border-green-400 shadow-sm mb-4 overflow-hidden">
+                    <div class="bg-slate-50 border-b border-slate-100 px-4 py-2.5 flex items-center">
+                        <div class="w-1 h-4 bg-green-500 rounded-full mr-2"></div>
+                        <p class="text-[11px] font-bold text-slate-700 uppercase tracking-wider">Acciones</p>
+                    </div>
+
+                    <div class="p-1.5 space-y-0.5">
+                        
+                        <button type="submit" form="{% if es_edicion %}edit-ccpp-form{% else %}nueva-ccpp-form{% endif %}" 
+                                class="w-full group flex items-center px-3 py-2.5 text-slate-600 hover:bg-slate-100 rounded-md transition-all duration-200">
+                            <div class="p-1.5 rounded-lg bg-slate-50 group-hover:bg-white group-hover:shadow-sm transition-all mr-3">
+                                <svg class="w-4 h-4 text-slate-500 group-hover:text-slate-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path>
+                                </svg>
+                            </div>
+                            <span class="text-[13px] font-medium group-hover:text-slate-900">
+                                {% if es_edicion %}Guardar Cambios{% else %}Crear CCPP{% endif %}
+                            </span>
+                        </button>
+
+                        {% if es_edicion %}
+                            <a href="{% url 'gestionUnidades_ccpp_modo' ccpp.id_ccpp 'asignacion' %}" 
+                            class="w-full group flex items-center px-3 py-2.5 text-slate-600 hover:bg-slate-100 rounded-md transition-all duration-200">
+                                <div class="p-1.5 rounded-lg bg-slate-50 group-hover:bg-white group-hover:shadow-sm transition-all mr-3">
+                                    <svg class="w-4 h-4 text-slate-500 group-hover:text-slate-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
+                                    </svg>
+                                </div>
+                                <span class="text-[13px] font-medium group-hover:text-slate-900">Asignar Unidades</span>
+                            </a>
+
+                            <a href="{% url 'gestionUnidades_ccpp_modo' ccpp.id_ccpp 'gestion' %}" 
+                            class="w-full group flex items-center px-3 py-2.5 text-slate-600 hover:bg-slate-100 rounded-md transition-all duration-200">
+                                <div class="p-1.5 rounded-lg bg-slate-50 group-hover:bg-white group-hover:shadow-sm transition-all mr-3">
+                                    <svg class="w-4 h-4 text-slate-500 group-hover:text-slate-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                    </svg>
+                                </div>
+                                <span class="text-[13px] font-medium group-hover:text-slate-900">Gestionar Unidades</span>
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+
+                {% if es_edicion %}
+                <hr class="mx-3 border-indigo-50/60 my-4">
+
+                <div class="bg-white rounded-xl border border-red-400 shadow-sm mb-4 overflow-hidden">
+                    <div class="bg-slate-50 border-b border-slate-100 px-4 py-2.5 flex items-center">
+                        <div class="w-1 h-4 bg-red-500 rounded-full mr-2"></div>
+                        <p class="text-[11px] font-bold text-slate-700 uppercase tracking-wider">Gestionar</p>
+                    </div>
+
+                    <div class="p-1.5 space-y-0.5">
+                        
+                        <a href="{% url 'gestion_ccpp' ccpp.id_ccpp %}" 
+                        class="w-full group flex items-center px-3 py-2.5 text-slate-600 hover:bg-slate-100 rounded-md transition-all duration-200">
+                            <div class="p-1.5 rounded-lg bg-slate-50 group-hover:bg-white group-hover:shadow-sm transition-all mr-3">
+                                <svg class="w-4 h-4 text-slate-500 group-hover:text-slate-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                </svg>
+                            </div>
+                            <span class="text-[13px] font-medium group-hover:text-slate-900">Cronograma</span>
+                        </a>
+                    </div>
+                </div>
+
+
+
+                <hr class="mx-3 border-indigo-50/60 my-4">
+
+                <div class="bg-white rounded-xl border border-blue-400 shadow-sm mb-4 overflow-hidden">
+                    <div class="bg-slate-50 border-b border-slate-100 px-4 py-2.5 flex items-center">
+                        <div class="w-1 h-4 bg-blue-500 rounded-full mr-2"></div>
+                        <p class="text-[11px] font-bold text-slate-700 uppercase tracking-wider">Más Opciones</p>
+                    </div>
+
+                    <div class="p-1.5">
+                        <button type="button" onclick="abrirModalClonar('{{ ccpp_nombre|default:''|escapejs }}')"
+                                class="w-full group flex items-center px-3 py-2.5 text-slate-600 hover:bg-slate-100 rounded-md transition-all duration-200">
+                            
+                            <div class="p-1.5 rounded-lg bg-slate-50 group-hover:bg-white group-hover:shadow-sm transition-all mr-3">
+                                <svg class="w-4 h-4 text-slate-500 group-hover:text-slate-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                                </svg>
+                            </div>
+                            
+                            <span class="text-[13px] font-medium group-hover:text-slate-900">Clonar CCPP</span>
+                        </button>
+                    </div>
+                </div>
+                {% endif %}
+            </nav>
+
+            <div class="mt-auto border-t border-indigo-50 bg-slate-50/30">
+                
+                {% if es_edicion %}
+                <div class="py-3 flex justify-center">
+                    <button onclick="abrirModalEliminar('{{ ccpp_nombre|default:""|escapejs }}')" 
+                            class="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 hover:text-red-500 transition-colors duration-200">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                        </svg>
+                        <span>ELIMINAR CCPP</span>
+                    </button>
+                </div>
+                {% endif %}
+
+                <div class="p-2 border-t border-indigo-50/50">
+                    <div class="flex items-center p-1.5 space-x-2 bg-white/80 rounded border border-indigo-50/50 shadow-sm">
+                        <div class="w-6 h-6 rounded-full bg-indigo-600 flex items-center justify-center text-white font-bold text-[9px]">
+                            {% if user.first_name and user.last_name %}
+                                {{ user.first_name|slice:":1" }}{{ user.last_name|slice:":1" }}
+                            {% else %}
+                                {{ user.username|slice:":2"|upper }}
+                            {% endif %}
+                        </div>
+                        
+                        <div class="flex-1 min-w-0 leading-tight">
+                            <input type="text" value="{{ user.username }}" readonly 
+                                class="input-invisible w-full bg-transparent border-none p-0 text-xs font-bold text-slate-900 focus:ring-0 cursor-default truncate"
+                                title="{{ user.username }}">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <div id="fondo-oscuro" onclick="alternarMenu()" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden lg:hidden" aria-hidden="true"></div>
+
+        <!-- Main Content -->
+        <main class="flex-1 flex flex-col min-w-0 bg-slate-50">
+            <header class="h-16 bg-white border-b border-slate-100 flex items-center px-4 sm:px-6 justify-between flex-shrink-0">
+                <div class="flex items-center gap-4">
+                    <button type="button" onclick="alternarMenu()" 
+                            class="lg:hidden p-2 rounded-lg text-slate-500 hover:bg-slate-50 hover:text-indigo-600 transition-all border border-slate-100 shadow-sm"
+                            aria-label="Menú">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 6h16M4 12h16M4 18h16"></path>
+                        </svg>
+                    </button>
+
+                    <div class="flex items-baseline gap-3">
+                        <h1 class="text-lg font-bold text-slate-800 tracking-tight leading-none">
+                            {% if es_edicion %}Editar CCPP{% else %}Nueva CCPP{% endif %}
+                        </h1>
+
+                        <nav class="hidden md:flex items-center text-xs font-medium" aria-label="Migas de pan">
+                            <span class="mx-1.5 text-slate-300">|</span>
+                            <div class="flex items-center gap-1.5">
+                                <a href="{% url 'panel_principal' %}" class="text-slate-400 hover:text-indigo-600 transition-colors">Inicio</a>
+                                <svg class="w-3.5 h-3.5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                </svg>
+                                <a href="{% url 'ccpp' %}" class="text-slate-400 hover:text-indigo-600 transition-colors">CCPP</a>
+                                <svg class="w-3.5 h-3.5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                </svg>
+                                <a href="" class="text-indigo-500 hover:text-indigo-700" aria-current="page">{% if es_edicion %}Detalle CCPP{% else %}Nueva CCPP{% endif %}</a>
+                            </div>
+                        </nav>
+                    </div>
+                </div>
+            </header>
+
+            <section class="flex-1 overflow-y-auto px-4 pt-2 pb-4">
+                <form id="{% if es_edicion %}edit-ccpp-form{% else %}nueva-ccpp-form{% endif %}" 
+                      method="POST" 
+                      action="{% if es_edicion %}{% url 'editar_ccpp' ccpp_id %}{% else %}{% url 'nueva_ccpp' %}{% endif %}" 
+                      enctype="multipart/form-data"
+                      class="max-w-6xl mx-auto space-y-4 mt-2"
+                      onsubmit="return validarFormulario()">
+                    {% csrf_token %}
+                    <input type="hidden" name="periodo" id="hidden_id_periodo" value="{{ valor_periodo|default:'' }}">
+                    <input type="hidden" name="remove_image" id="remove_image" value="false">
+                    
+                    <!-- Información Básica -->
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+                        <h3 class="text-sm font-bold text-slate-800 mb-4 flex items-center">
+                            <svg class="w-3.5 h-3.5 mr-2 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                            </svg>
+                            Información Básica
+                        </h3>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-6 gap-4">
+                            {% if es_edicion %}
+                            <div class="md:col-span-1">
+                                <label class="block text-xs font-bold text-slate-500 uppercase mb-1 ml-1">ID CCPP</label>
+                                <input disabled type="text" 
+                                    value="CCPP{{ ccpp.id_ccpp|stringformat:'03d' }}"
+                                    class="w-full px-3 py-2 rounded-lg border border-slate-200 bg-slate-50 font-bold text-center text-slate-500 text-xs outline-none">
+                            </div>
+                            <div class="md:col-span-5">
+                            {% else %}
+                            <div class="md:col-span-6">
+                            {% endif %}
+                                <label for="id_ccpp_residencial" class="block text-xs font-bold text-slate-500 uppercase mb-1 ml-1">CCPP Residencial *</label>
+                                <input type="text" name="ccpp_residencial" id="id_ccpp_residencial" maxlength="100"
+                                    value="{{ ccpp_nombre|default:'' }}"
+                                    class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-100 outline-none text-xs"
+                                    required>
+                                {% if errores.ccpp_residencial %}
+                                    <p class="text-xs text-red-500 mt-1">{{ errores.ccpp_residencial|safe }}</p>
+                                {% endif %}
+                            </div>
+
+                            <div class="md:col-span-2">
+                                <label for="id_fecha_entrega" class="block text-xs font-bold text-slate-500 uppercase mb-1 ml-1">Fecha de entrega</label>
+                                <input type="date" name="fecha_entrega" id="id_fecha_entrega"
+                                    value="{{ fecha_entrega|default:'' }}"
+                                    class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-100 outline-none text-xs">
+                                {% if errores.fecha_entrega %}
+                                    <p class="text-xs text-red-500 mt-1">{{ errores.fecha_entrega|safe }}</p>
+                                {% endif %}
+                            </div>
+
+                            <div class="md:col-span-2">
+                                <label for="id_cant_anos" class="block text-xs font-bold text-slate-500 uppercase mb-1 ml-1">Cantidad de años</label>
+                                <input type="number" name="cant_anos" id="id_cant_anos" min="0" max="50"
+                                    value="{{ cantidad_anios|default:'' }}"
+                                    class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-100 outline-none text-xs">
+                                {% if errores.cant_anos %}
+                                    <p class="text-xs text-red-500 mt-1">{{ errores.cant_anos|safe }}</p>
+                                {% endif %}
+                            </div>
+
+                            <div class="md:col-span-2">
+                                <label class="block text-xs font-bold text-slate-500 uppercase mb-1 ml-1">Período</label>
+                                <div id="periodo_display" class="w-full px-3 py-2 rounded-lg border border-slate-200 bg-slate-50 text-xs text-slate-600 h-[34px] flex items-center">
+                                    {{ periodo|default:'-' }}
+                                </div>
+                            </div>
+
+                            <div class="md:col-span-6">
+                                <label for="id_direccion" class="block text-xs font-bold text-slate-500 uppercase mb-1 ml-1">Dirección</label>
+                                <textarea name="direccion" id="id_direccion" rows="3" maxlength="255"
+                                    class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-100 outline-none text-xs resize-none">{{ direccion|default:'' }}</textarea>
+                                {% if errores.direccion %}
+                                    <p class="text-xs text-red-500 mt-1">{{ errores.direccion|safe }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="mt-4 flex items-center p-2 bg-slate-50 rounded-lg border border-dashed border-slate-200 hover:border-indigo-200 transition-colors">
+                            <label class="flex items-center cursor-pointer w-full">
+                                <input id="id_ccpp_habilitada" name="habilitada" type="checkbox" 
+                                    {% if habilitada or habilitada_val or valor_habilitada %}checked{% endif %}
+                                    class="w-3.5 h-3.5 text-indigo-600 rounded">
+                                <div class="ml-2">
+                                    <span class="text-xs font-semibold text-slate-700">CCPP Habilitada</span>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Información de Contacto -->
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+                        <h3 class="text-sm font-bold text-slate-800 mb-4 flex items-center">
+                            <svg class="w-3.5 h-3.5 mr-2 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                            </svg>
+                            Información de Contacto
+                        </h3>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            <!-- Operario Comunidad -->
+                            <div>
+                                <label for="id_operario_comunidad" class="block text-xs font-bold text-slate-500 uppercase mb-1 ml-1">Operario Comunidad</label>
+                                <textarea name="operario_comunidad" id="id_operario_comunidad" rows="5" maxlength="200"
+                                          class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-100 outline-none text-xs resize-none">{{ operario_comunidad|default:'' }}</textarea>
+                                {% if errores.operario_comunidad %}
+                                    <p class="text-xs text-red-500 mt-1">{{ errores.operario_comunidad|safe }}</p>
+                                {% endif %}
+                            </div>
+
+                            <!-- Empresa Especializada -->
+                            <div>
+                                <label for="id_empresa_especializada" class="block text-xs font-bold text-slate-500 uppercase mb-1 ml-1">Empresa Especializada</label>
+                                <textarea name="empresa_especializada" id="id_empresa_especializada" rows="5" maxlength="200"
+                                          class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-100 outline-none text-xs resize-none">{{ empresa_especializada|default:'' }}</textarea>
+                                {% if errores.empresa_especializada %}
+                                    <p class="text-xs text-red-500 mt-1">{{ errores.empresa_especializada|safe }}</p>
+                                {% endif %}
+                            </div>
+
+                            <!-- Administración del edificio -->
+                            <div>
+                                <label for="id_administracion_edificio" class="block text-xs font-bold text-slate-500 uppercase mb-1 ml-1">Administración del edificio</label>
+                                <textarea name="administracion_edificio" id="id_administracion_edificio" rows="5" maxlength="200"
+                                          class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-100 outline-none text-xs resize-none">{{ administracion_edificio|default:'' }}</textarea>
+                                {% if errores.administracion_edificio %}
+                                    <p class="text-xs text-red-500 mt-1">{{ errores.administracion_edificio|safe }}</p>
+                                {% endif %}
+                            </div>
+
+                            <!-- Técnico Especialista -->
+                            <div>
+                                <label for="id_tecnico_especialista" class="block text-xs font-bold text-slate-500 uppercase mb-1 ml-1">Técnico Especialista</label>
+                                <textarea name="tecnico_especialista" id="id_tecnico_especialista" rows="5" maxlength="200"
+                                          class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-100 outline-none text-xs resize-none">{{ tecnico_especialista|default:'' }}</textarea>
+                                {% if errores.tecnico_especialista %}
+                                    <p class="text-xs text-red-500 mt-1">{{ errores.tecnico_especialista|safe }}</p>
+                                {% endif %}
+                            </div>
+
+                            <!-- Técnico de cabecera -->
+                            <div>
+                                <label for="id_tecnico_cabecera" class="block text-xs font-bold text-slate-500 uppercase mb-1 ml-1">Técnico de cabecera</label>
+                                <textarea name="tecnico_cabecera" id="id_tecnico_cabecera" rows="5" maxlength="200"
+                                          class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-100 outline-none text-xs resize-none">{{ tecnico_cabecera|default:'' }}</textarea>
+                                {% if errores.tecnico_cabecera %}
+                                    <p class="text-xs text-red-500 mt-1">{{ errores.tecnico_cabecera|safe }}</p>
+                                {% endif %}
+                            </div>
+
+                            <!-- Copia oculta -->
+                            <div>
+                                <label for="id_copia_oculta" class="block text-xs font-bold text-slate-500 uppercase mb-1 ml-1">Copia oculta</label>
+                                <textarea name="copia_oculta" id="id_copia_oculta" rows="5" maxlength="200"
+                                          class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-100 outline-none text-xs resize-none">{{ copia_oculta|default:'' }}</textarea>
+                                {% if errores.copia_oculta %}
+                                    <p class="text-xs text-red-500 mt-1">{{ errores.copia_oculta|safe }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Imagen de CCPP -->
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+                        <h3 class="text-sm font-bold text-slate-800 mb-4 flex items-center">
+                            <svg class="w-3.5 h-3.5 mr-2 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                            </svg>
+                            Imagen de CCPP
+                        </h3>
+                        
+                        <div class="flex flex-col items-center space-y-3">
+                            <div id="contenedor-vista-previa-imagen" 
+                                 onclick="document.getElementById('id_imagen_ccpp').click()"
+                                 class="w-40 h-40 border-2 border-dashed border-slate-200 rounded-xl flex items-center justify-center cursor-pointer hover:border-indigo-300 hover:bg-slate-50 transition-colors overflow-hidden"
+                                 role="button" aria-label="Subir imagen">
+                                {% if es_edicion and ccpp.imagen %}
+                                    <img id="vista-previa-imagen" src="{{ ccpp.imagen.url }}" alt="Imagen actual de la CCPP"
+                                         class="w-full h-full object-cover">
+                                    <svg id="marcador-de-imagen" class="hidden w-10 h-10 text-slate-300" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                    </svg>
+                                {% else %}
+                                    <img id="vista-previa-imagen" src="#" alt="Vista previa de la CCPP" class="hidden w-full h-full object-cover">
+                                    <svg id="marcador-de-imagen" class="w-10 h-10 text-slate-300" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                    </svg>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="flex items-center space-x-2">
+                                <label class="px-3 py-1.5 bg-indigo-600 text-white text-xs font-medium rounded-lg hover:bg-indigo-700 transition-colors cursor-pointer">
+                                    <span>Subir Imagen</span>
+                                    <input id="id_imagen_ccpp" name="imagen" type="file" accept="image/*" class="hidden">
+                                </label>
+                                
+                                {% if es_edicion and ccpp.imagen %}
+                                <button type="button" onclick="quitarImagen()" class="px-3 py-1.5 bg-red-100 text-red-600 text-xs font-medium rounded-lg hover:bg-red-200 transition-colors">
+                                    Quitar Imagen
+                                </button>
+                                {% endif %}
+                            </div>
+                            
+                            {% if errores.imagen %}
+                                <p class="text-xs text-red-500 mt-1">{{ errores.imagen|safe }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </form>
+            </section>
+        </main>
+    </div>
+
+    <!-- Modal de eliminación -->
+    {% if es_edicion %}
+    <div id="modal-eliminar" class="fixed inset-0 z-50 flex items-center justify-center p-4 hidden" aria-modal="true">
+        <div class="absolute inset-0 bg-black bg-opacity-50" onclick="cerrarModalEliminar()" aria-hidden="true"></div>
+        
+        <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm">
+            <div class="p-6">
+                <div class="flex items-center justify-center w-12 h-12 mx-auto mb-3 bg-red-50 rounded-xl">
+                    <svg class="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.394 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                </div>
+                
+                <div class="text-center">
+                    <h3 class="text-base font-bold text-slate-800 mb-2">Confirmar Eliminación</h3>
+                    <p class="text-xs text-slate-600 mb-4">
+                        ¿Está seguro que desea eliminar el CCPP: 
+                        <span class="font-semibold text-red-600" id="nombre-ccpp-eliminar">{{ ccpp_nombre|default:'' }}</span>?
+                        <br>
+                        <span class="text-xs text-red-500 font-medium">Esta acción es permanente y no se puede deshacer.</span>
+                    </p>
+                </div>
+            </div>
+            
+            <div class="flex border-t border-slate-100 p-4">
+                <button type="button" id="boton-confirmar-eliminar" onclick="document.getElementById('delete-ccpp-form').submit();"
+                        class="flex-1 px-3 py-1.5 bg-red-600 text-white text-xs font-medium rounded-lg hover:bg-red-700 transition-colors">
+                    Eliminar
+                </button>
+                <button type="button" id="boton-cancelar-eliminar" onclick="cerrarModalEliminar()"
+                        class="flex-1 px-3 py-1.5 bg-white text-slate-700 text-xs font-medium rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors ml-2">
+                    Cancelar
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal de clonación -->
+    <div id="modal-clonar" class="fixed inset-0 z-50 flex items-center justify-center p-4 hidden" aria-modal="true">
+        <div class="absolute inset-0 bg-black bg-opacity-50" onclick="cerrarModalClonar()" aria-hidden="true"></div>
+        
+        <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm">
+            <div class="p-6">
+                <div class="flex items-center justify-center w-12 h-12 mx-auto mb-3 bg-indigo-50 rounded-xl">
+                    <svg class="w-6 h-6 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                    </svg>
+                </div>
+                
+                <div class="text-center">
+                    <h3 class="text-base font-bold text-slate-800 mb-2">Confirmar Clonación</h3>
+                    <p class="text-xs text-slate-600 mb-4">
+                        ¿Está seguro que desea clonar el CCPP: 
+                        <span class="font-semibold text-indigo-600" id="nombre-ccpp-clonar">{{ ccpp_nombre|default:'' }}</span>?
+                        <br>
+                        <span class="text-xs text-slate-500">Se creará una copia idéntica de esta CCPP.</span>
+                    </p>
+                </div>
+            </div>
+            
+            <div class="flex border-t border-slate-100 p-4">
+                <button type="button" id="boton-confirmar-clonar" onclick="document.getElementById('clone-ccpp-form').submit();"
+                        class="flex-1 px-3 py-1.5 bg-indigo-600 text-white text-xs font-medium rounded-lg hover:bg-indigo-700 transition-colors">
+                    Clonar CCPP
+                </button>
+                <button type="button" id="boton-cancelar-clonar" onclick="cerrarModalClonar()"
+                        class="flex-1 px-3 py-1.5 bg-white text-slate-700 text-xs font-medium rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors ml-2">
+                    Cancelar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Formularios ocultos -->
+    <form method="POST" action="{% url 'eliminar_ccpp' ccpp.id_ccpp %}" id="delete-ccpp-form" class="hidden">
+        {% csrf_token %}
+    </form>
+    
+    <form method="post" action="{% url 'clonar_ccpp' ccpp.id_ccpp %}" id="clone-ccpp-form" class="hidden">
+        {% csrf_token %}
+    </form>
+    {% endif %}
+
+    <script>
+        const Aplicacion = {
+            elementos: {
+                sidebar: document.getElementById('sidebar-principal'),
+                fondoOscuro: document.getElementById('fondo-oscuro'),
+                inputImagen: document.getElementById('id_imagen_ccpp'),
+                vistaPreviaImagen: document.getElementById('vista-previa-imagen'),
+                marcadorImagen: document.getElementById('marcador-de-imagen'),
+                fechaEntrega: document.getElementById('id_fecha_entrega'),
+                cantidadAnos: document.getElementById('id_cant_anos'),
+                modalActivo: null
+            },
+
+            // Inicializar la aplicación
+            inicializar() {
+                this.configurarEventos();
+                this.calcularPeriodo();
+            },
+
+            // Configurar todos los eventos
+            configurarEventos() {
+                // Eventos para calcular período
+                if (this.elementos.fechaEntrega) {
+                    this.elementos.fechaEntrega.addEventListener('input', () => this.calcularPeriodo());
+                }
+                if (this.elementos.cantidadAnos) {
+                    this.elementos.cantidadAnos.addEventListener('input', () => this.calcularPeriodo());
+                }
+
+                // Evento para vista previa de imagen
+                if (this.elementos.inputImagen) {
+                    this.elementos.inputImagen.addEventListener('change', (e) => this.manejarVistaPreviaImagen(e));
+                }
+
+                // Evento para cerrar modal con Escape
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape') this.cerrarModal();
+                });
+
+                // Evento para clics en fondo oscuro
+                if (this.elementos.fondoOscuro) {
+                    this.elementos.fondoOscuro.addEventListener('click', () => this.alternarMenu());
+                }
+            },
+
+            // Alternar menú lateral en móviles
+            alternarMenu() {
+                const { sidebar, fondoOscuro } = this.elementos;
+                if (!sidebar || !fondoOscuro) return;
+
+                const estaAbierto = sidebar.classList.contains('translate-x-0');
+                
+                sidebar.classList.toggle('-translate-x-full', estaAbierto);
+                sidebar.classList.toggle('translate-x-0', !estaAbierto);
+                fondoOscuro.classList.toggle('hidden', estaAbierto);
+                document.body.style.overflow = estaAbierto ? '' : 'hidden';
+            },
+
+            // Calcular el período basado en fecha y años
+            calcularPeriodo() {
+                const fechaStr = this.elementos.fechaEntrega?.value;
+                const anosValue = parseInt(this.elementos.cantidadAnos?.value, 10);
+                const display = document.getElementById('periodo_display');
+                const campoOculto = document.getElementById('hidden_id_periodo');
+
+                if (fechaStr && !isNaN(anosValue) && anosValue >= 0) {
+                    const añoInicio = parseInt(fechaStr.substring(0, 4), 10);
+                    const periodo = `${añoInicio}-${añoInicio + anosValue}`;
+                    
+                    if (display) display.textContent = periodo;
+                    if (campoOculto) campoOculto.value = periodo;
+                } else {
+                    if (display) display.textContent = '-';
+                }
+            },
+
+            // Manejar vista previa de imagen
+            manejarVistaPreviaImagen(evento) {
+                const archivo = evento.target.files[0];
+                const { vistaPreviaImagen, marcadorImagen } = this.elementos;
+
+                if (archivo && archivo.size <= 5 * 1024 * 1024) {
+                    const lector = new FileReader();
+                    lector.onload = (e) => {
+                        vistaPreviaImagen.src = e.target.result;
+                        vistaPreviaImagen.classList.remove('hidden');
+                        marcadorImagen.classList.add('hidden');
+                    };
+                    lector.readAsDataURL(archivo);
+                } else if (archivo) {
+                    alert("El archivo es demasiado grande (Máx 5MB)");
+                    this.quitarImagen();
+                }
+            },
+
+            // Quitar imagen seleccionada
+            quitarImagen() {
+                const { inputImagen, vistaPreviaImagen, marcadorImagen } = this.elementos;
+                if (inputImagen) inputImagen.value = '';
+                if (vistaPreviaImagen) vistaPreviaImagen.src = '#';
+                vistaPreviaImagen?.classList.add('hidden');
+                marcadorImagen?.classList.remove('hidden');
+                
+                const indicadorQuitar = document.getElementById('remove_image');
+                if (indicadorQuitar) indicadorQuitar.value = 'true';
+            },
+
+            // Abrir modal específico
+            abrirModal(idModal, nombreCCPP = '') {
+                const modal = document.getElementById(idModal);
+                if (!modal) return;
+
+                // Actualizar nombre del CCPP en el modal si existe
+                const elementosNombre = modal.querySelectorAll('.nombre-ccpp');
+                elementosNombre.forEach(elemento => {
+                    if (elemento.id.includes('nombre-ccpp')) {
+                        elemento.textContent = nombreCCPP;
+                    }
+                });
+
+                modal.classList.remove('hidden');
+                document.body.classList.add('overflow-hidden');
+                this.elementos.modalActivo = modal;
+            },
+
+            // Cerrar modal activo
+            cerrarModal() {
+                if (this.elementos.modalActivo) {
+                    this.elementos.modalActivo.classList.add('hidden');
+                    document.body.classList.remove('overflow-hidden');
+                    this.elementos.modalActivo = null;
+                }
+            },
+
+            // Funciones específicas para modales
+            abrirModalEliminar(nombreCCPP = '') {
+                this.abrirModal('modal-eliminar', nombreCCPP);
+            },
+
+            cerrarModalEliminar() {
+                this.cerrarModal();
+            },
+
+            abrirModalClonar(nombreCCPP = '') {
+                this.abrirModal('modal-clonar', nombreCCPP);
+            },
+
+            cerrarModalClonar() {
+                this.cerrarModal();
+            }
+        };
+
+        // Funciones globales para acceso desde HTML
+        window.alternarMenu = () => Aplicacion.alternarMenu();
+        window.quitarImagen = () => Aplicacion.quitarImagen();
+        window.abrirModalEliminar = (nombreCCPP) => Aplicacion.abrirModalEliminar(nombreCCPP);
+        window.cerrarModalEliminar = () => Aplicacion.cerrarModalEliminar();
+        window.abrirModalClonar = (nombreCCPP) => Aplicacion.abrirModalClonar(nombreCCPP);
+        window.cerrarModalClonar = () => Aplicacion.cerrarModalClonar();
+
+        // Inicializar aplicación cuando el DOM esté cargado
+        document.addEventListener('DOMContentLoaded', () => Aplicacion.inicializar());
+
+        // Función de validación de formulario
+        function validarFormulario() {
+            const nombreCCPP = document.getElementById('id_ccpp_residencial');
+            
+            if (nombreCCPP && !nombreCCPP.value.trim()) {
+                alert('El campo "CCPP Residencial" es obligatorio.');
+                nombreCCPP.focus();
+                return false;
+            }
+            
+            return true;
+        }
+    </script>
+</body>
+</html>

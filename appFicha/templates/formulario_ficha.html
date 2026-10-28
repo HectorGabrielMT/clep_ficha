@@ -1,0 +1,907 @@
+<!-- appFicha - templates/formulario_ficha.html -->
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clep - Gestión de Ficha</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/estiloGlobal.css' %}">
+    <link rel="icon" type="image/png" href="{% static 'img/icono.png' %}">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Poppins', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-slate-50 font-sans antialiased text-slate-900">
+    {% include 'base/mensajes.html' %}
+    
+    <div class="flex h-screen overflow-hidden">
+        <aside id="sidebar-principal" class="fixed inset-y-0 left-0 w-64 bg-white shadow-xl flex flex-col z-50 border-r border-indigo-50 h-full flex-shrink-0 transition-transform duration-300 transform -translate-x-full lg:relative lg:translate-x-0">
+            
+            <div class="p-4 border-b border-indigo-50 relative">
+                <div class="absolute left-4 top-6">
+                    <a href="{% url 'panel_fichas'  ccpp.id_ccpp unidad.id_unidad origen %}" class="text-slate-400 hover:text-indigo-600 transition-colors flex items-center">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                        </svg>
+                    </a>
+                </div>
+
+                <div class="flex flex-col items-center">
+                    {% if user.is_superuser %}
+                        <a href="{% url 'panel_principal' %}" class="space-x-3">
+                    {% else %}
+                        <a href="" class="space-x-3">
+                    {% endif %}
+                        <div class="flex items-center gap-3">
+                            <div class="flex-shrink-0">
+                                <img src="{% static 'img/logo.png' %}" 
+                                    alt="Logo clep" 
+                                    class="w-32 h-16 object-contain drop-shadow-sm transition-transform duration-300 hover:scale-110">
+                            </div>
+                        </div>
+                    </a>
+                </div>
+
+                <div class="absolute right-4 top-5 lg:hidden">
+                    <button onclick="alternarMenu()" class="p-2 text-slate-400 hover:text-red-500">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <nav class="flex-1 px-3 py-4 overflow-y-auto">
+                <div class="bg-white rounded-xl border border-green-400 shadow-sm mb-4 overflow-hidden">
+                    <div class="bg-slate-50 border-b border-slate-100 px-4 py-2.5 flex items-center">
+                        <div class="w-1 h-4 bg-green-500 rounded-full mr-2"></div>
+                        <p class="text-[11px] font-bold text-slate-700 uppercase tracking-wider">Acciones</p>
+                    </div>
+
+                    <div class="p-1.5 space-y-0.5">
+                        
+                        <button type="submit" form="form-ficha-completo" 
+                                class="w-full group flex items-center px-3 py-2.5 text-slate-600 hover:bg-slate-100 rounded-md transition-all duration-200">
+                            <div class="p-1.5 rounded-lg bg-slate-50 group-hover:bg-white group-hover:shadow-sm transition-all mr-3">
+                                <svg class="w-4 h-4 text-slate-500 group-hover:text-slate-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path>
+                                </svg>
+                            </div>
+                            <span class="text-[13px] font-medium group-hover:text-slate-900">Guardar</span>
+                        </button>
+
+                        {% if ficha.id %}
+                            <a href="{% url 'exportar_ficha_pdf' ficha.id ccpp.pk 'false' %}" 
+                            class="w-full group flex items-center px-3 py-2.5 text-slate-600 hover:bg-slate-100 rounded-md transition-all duration-200">
+                                <div class="p-1.5 rounded-lg bg-slate-50 group-hover:bg-white group-hover:shadow-sm transition-all mr-3">
+                                    <svg class="w-4 h-4 text-slate-500 group-hover:text-slate-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                    </svg>
+                                </div>
+                                <span class="text-[13px] font-medium group-hover:text-slate-900">Ver Ficha</span>
+                            </a>
+
+                            <a href="{% url 'exportar_ficha_pdf' ficha.id ccpp.pk 'true' %}" 
+                            class="w-full group flex items-center px-3 py-2.5 text-slate-600 hover:bg-slate-100 rounded-md transition-all duration-200">
+                                <div class="p-1.5 rounded-lg bg-slate-50 group-hover:bg-white group-hover:shadow-sm transition-all mr-3">
+                                    <svg class="w-4 h-4 text-slate-500 group-hover:text-slate-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                                    </svg>
+                                </div>
+                                <span class="text-[13px] font-medium group-hover:text-slate-900">Descargar PDF</span>
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <hr class="mx-3 border-indigo-50/60 my-4"> 
+                <div class="mb-6">
+                    <div class="flex items-center justify-between mb-2 ml-1">
+                        <p class="block text-[10px] font-bold text-slate-500 uppercase">Referencia de Unidad</p>
+                    </div>
+                    
+                    <div class="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+                        <div class="p-2 border-b border-slate-100 hover:bg-slate-50 transition-colors cursor-help" title="Capítulo: {{ unidad.capitulo }}">
+                            <span class="block text-[8px] font-bold text-slate-400 uppercase">Capítulo</span>
+                            <input type="text" value="{{ unidad.capitulo }}" readonly 
+                                class="w-full bg-transparent border-none p-0 text-[11px] text-slate-600 focus:ring-0 cursor-help truncate input-invisible">
+                        </div>
+
+                        <div class="p-2 border-b border-slate-100 hover:bg-slate-50 transition-colors cursor-help" title="Unidad: {{ unidad.unidad }}">
+                            <span class="block text-[8px] font-bold text-indigo-400 uppercase">Unidad de Control</span>
+                            <input type="text" value="{{ unidad.unidad }}" readonly 
+                                class="w-full bg-transparent border-none p-0 text-[11px] font-bold text-slate-800 focus:ring-0 cursor-help truncate input-invisible">
+                        </div>
+
+                        <div class="p-2 border-b border-slate-100 hover:bg-slate-50 transition-colors cursor-help" title="{{ unidad.descripcion }}">
+                            <span class="block text-[8px] font-bold text-slate-400 uppercase">Descripción</span>
+                            <div class="text-[10px] text-slate-500 italic line-clamp-1 truncate">
+                                {{ unidad.descripcion }}
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 bg-slate-50/50">
+                            <div class="p-2 border-r border-slate-100 hover:bg-indigo-50/30 transition-colors cursor-help" title="DOC: {{ unidad.doc }}">
+                                <span class="block text-[8px] font-bold text-slate-400 uppercase">Documento</span>
+                                <input type="text" value="{{ unidad.doc }}" readonly 
+                                    class="w-full bg-transparent border-none p-0 text-[10px] font-semibold text-indigo-700 focus:ring-0 cursor-help truncate input-invisible">
+                            </div>
+                            <div class="p-2 hover:bg-indigo-50/30 transition-colors cursor-help" title="Obs: {{ unidad.observacion }}">
+                                <span class="block text-[8px] font-bold text-slate-400 uppercase">Observación</span>
+                                <input type="text" value="{{ unidad.observacion|default:'---' }}" readonly 
+                                    class="w-full bg-transparent border-none p-0 text-[10px] font-medium text-slate-600 focus:ring-0 cursor-help truncate input-invisible">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="mx-3 border-indigo-50/60 my-4"> 
+
+                <div class="mt-6 px-1">
+                    <p class="block text-[10px] font-bold text-slate-500 uppercase mb-2 ml-1 tracking-wider">
+                        Información
+                    </p>
+
+                    <div class="space-y-3 ml-1">
+                        <div class="flex flex-col space-y-0.5">
+                            <span class="text-[10px] font-bold text-indigo-600 italic">Técnico de Cabecera:</span>
+                            <span class="text-[10px] text-slate-500 leading-tight">
+                                Gestionar Datos Maestros > CCPP > Contactos
+                            </span>
+                        </div>
+
+                        <div class="space-y-1.5">
+                            <div class="flex items-start text-[10px] text-slate-600">
+                                <span class="font-bold w-12 flex-shrink-0 text-slate-400">Insp.:</span>
+                                <span class="leading-tight">Ejecutor de la inspección</span>
+                            </div>
+                            <div class="flex items-start text-[10px] text-slate-600">
+                                <span class="font-bold w-12 flex-shrink-0 text-slate-400">Ejec:</span>
+                                <span class="leading-tight">Control verificado</span>
+                            </div>
+                            <div class="flex items-start text-[10px] text-slate-600">
+                                <span class="font-bold w-12 flex-shrink-0 text-slate-400">Opacar:</span>
+                                <span class="leading-tight">Control opacado/difuminado</span>
+                            </div>
+                            <div class="flex items-start text-[10px] text-slate-600">
+                                <span class="font-bold w-12 flex-shrink-0 text-slate-400">Ocult:</span>
+                                <span class="leading-tight">Control oculto/excluido</span>
+                            </div>
+                            <div class="flex items-center text-[10px] text-slate-600 pt-0.5">
+                                <div class="w-12 flex-shrink-0">
+                                    <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                    </svg>
+                                </div>
+                                <span class="leading-tight">Eliminar el control actual</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+
+            <div class="mt-auto border-t border-indigo-50 bg-slate-50/30">
+                
+                {% if edicion %}
+                    <div class="py-3 flex justify-center">
+                        <button onclick="abrirModalConfirmacion('{% url 'eliminar_ficha' ficha.id ccpp.id_ccpp origen %}', '¿Eliminar {{ ficha.titulo }}?')" 
+                        class="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 hover:text-red-500 transition-colors duration-200">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                            </svg>
+                            <span>ELIMINAR FICHA</span>
+                        </button>
+                    </div>
+                {% endif %}
+
+                <div class="p-2 border-t border-indigo-50/50">
+                    <div class="flex items-center p-1.5 space-x-2 bg-white/80 rounded border border-indigo-50/50 shadow-sm">
+                        <div class="w-6 h-6 rounded-full bg-indigo-600 flex items-center justify-center text-white font-bold text-[9px]">
+                            {% if user.first_name and user.last_name %}
+                                {{ user.first_name|slice:":1" }}{{ user.last_name|slice:":1" }}
+                            {% else %}
+                                {{ user.username|slice:":2"|upper }}
+                            {% endif %}
+                        </div>
+                        
+                        <div class="flex-1 min-w-0 leading-tight">
+                            <input 
+                                type="text" 
+                                value="{{ user.username }}" 
+                                readonly 
+                                class="input-invisible w-full bg-transparent border-none p-0 text-xs font-bold text-slate-900 focus:ring-0 cursor-default truncate"
+                                title="{{ user.username }}"
+                            >
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <div id="fondo-oscuro" class="fixed inset-0 bg-black/50 z-40 lg:hidden hidden"></div>
+
+        <main class="flex-1 flex flex-col min-w-0 bg-slate-50">
+            <header class="h-16 bg-white border-b border-slate-100 flex items-center px-4 sm:px-6 justify-between flex-shrink-0">
+                <div class="flex items-center gap-4">
+                    <button type="button" onclick="alternarMenu()" 
+                            class="lg:hidden p-2 rounded-lg text-slate-500 hover:bg-slate-50 hover:text-indigo-600 transition-all border border-slate-100 shadow-sm">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 6h16M4 12h16M4 18h16"></path>
+                        </svg>
+                    </button>
+
+                    <div class="flex items-baseline gap-3">
+                        <h1 class="text-lg font-bold text-slate-800 tracking-tight leading-none">
+                            {% if edicion %} 
+                                Edición de Ficha
+                            {% else %} 
+                                Nueva Ficha de Datos
+                            {% endif %}
+                        </h1>   
+                        
+                        <nav class="hidden md:flex items-center text-xs font-medium">
+                            <span class="mx-1.5 text-slate-300">|</span>
+                            <div class="flex items-center gap-1.5">
+                                                                    {% if user.is_superuser %}
+                                        <a href="{% url 'panel_principal' %}" class="text-slate-400 hover:text-indigo-600 transition-colors">Inicio</a>
+
+                                        <svg class="w-3.5 h-3.5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                        </svg>
+                                    {%endif %}
+
+
+                                {% if origen == 0 %}
+                                    <a href="{% url 'gestion_ccpp' ccpp.id_ccpp %}" class="text-slate-400 hover:text-indigo-600 transition-colors">Cronograma</a>
+                                {% else %}
+                                        <a href="{% url 'ccpp' %}" class="text-slate-400 hover:text-indigo-600 transition-colors">CCPP</a>
+                                        <svg class="w-3.5 h-3.5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                        </svg>
+                                        <a href="{% url 'editar_ccpp' ccpp.id_ccpp %}" class="text-slate-400 hover:text-indigo-600 transition-colors">Detalle CCPP</a>
+                                        <svg class="w-3.5 h-3.5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                        </svg>
+                                        <a href="{% url 'gestionUnidades_ccpp_modo' ccpp.id_ccpp 'gestion' %}" class="text-slate-400 hover:text-indigo-600 transition-colors">Unidades</a>
+                                    {% if origen == 2 %}
+                                        <svg class="w-3.5 h-3.5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                        </svg>
+                                        <a href="{% url 'editar_unidad' unidad.id_unidad ccpp.id_ccpp %}" class="text-slate-400 hover:text-indigo-600 transition-colors">Detalle unidad</a>
+                                    {% endif %}
+                                {% endif %}
+
+                                <svg class="w-3.5 h-3.5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                </svg>    
+
+                                <a href="{% url 'panel_fichas' ccpp.id_ccpp unidad.id_unidad origen %}" class="text-slate-400 hover:text-indigo-600 transition-colors">Fichas</a>
+
+                                <svg class="w-3.5 h-3.5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                </svg>
+
+                                <button onclick="window.location.reload();" class="text-slate-400 hover:text-indigo-600 transition-colors">Detalle ficha</button>
+
+
+                            </div>
+                        </nav>
+                    </div>
+                </div>
+            </header>
+
+            <section class="flex-1 overflow-y-auto pt-3 px-4 pb-6 sm:px-6">
+                <div class="max-w-full">
+
+                    <div class="flex flex-col gap-0.5 mb-6 border-l-2 border-indigo-500/20 pl-3">
+                        
+                        <div class="flex items-baseline gap-2 overflow-hidden">
+                            <span class="shrink-0 text-[9px] font-black text-slate-400 uppercase tracking-tighter">Capítulo:</span>
+                            <input type="text" value="{{ unidad.capitulo }}" readonly 
+                                class="w-full bg-transparent text-slate-500 text-[10px] py-0.5 focus:outline-none cursor-default truncate"
+                                title="{{ unidad.capitulo }}">
+                        </div>
+                        
+                        <div class="flex items-baseline gap-2 overflow-hidden">
+                            <span class="shrink-0 text-[9px] font-black text-slate-400 uppercase tracking-tighter">Unidad:</span>
+                            <input type="text" value="{{ unidad.unidad }}" readonly 
+                                class="w-full bg-transparent text-slate-500 text-[10px] py-0.5 focus:outline-none cursor-default truncate font-medium"
+                                title="{{ unidad.unidad }}">
+                        </div>
+
+                    </div>
+
+
+                    <form id="form-ficha-completo" 
+                        action="{% if edicion %}{% url 'editar_ficha' ficha.id ccpp.id_ccpp origen %}{% else %}{% url 'nueva_ficha' unidad.id_unidad ccpp.id_ccpp origen %}{% endif %}"
+                        method="POST" 
+                        enctype="multipart/form-data" 
+                        class="space-y-4">
+                        {% csrf_token %}
+
+                        <div class="grid grid-cols-12 gap-4 mb-4">
+                            
+                            <div class="col-span-12 md:col-span-9 bg-white p-4 rounded-lg shadow-sm border border-indigo-50">
+                                <label for="titulo" class="flex items-center gap-1 text-xs font-bold text-slate-500 uppercase mb-2 ml-1">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
+                                    </svg>
+                                    Título de la Ficha <span class="text-red-500">*</span>
+                                </label>
+                                <input type="text" id="titulo" name="titulo" 
+                                    value="{% if errores %}{{ titulo_value }}{% else %}{{ ficha.titulo|default:'' }}{% endif %}"
+                                    class="{% if errores and errores.titulo %}border-red-500{% else %}border-slate-200{% endif %} w-full px-3 py-2 rounded-lg border focus:ring-2 focus:ring-indigo-100 outline-none text-sm"
+                                    placeholder="Ingrese el título descriptivo aquí...">
+                                {% if errores and errores.titulo %}
+                                    <p class="text-red-500 text-xs mt-1 font-medium">{{ errores.titulo }}</p>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-span-12 md:col-span-3 bg-white p-4 rounded-lg shadow-sm border border-indigo-50">
+                                <label for="fecha" class="flex items-center gap-1 text-xs font-bold text-slate-500 uppercase mb-2 ml-1">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                    </svg>
+                                    Fecha <span class="text-red-500">*</span>
+                                </label>
+                                <input type="date" id="fecha" name="fecha" required
+                                    value="{{ fecha_creacion_value }}"
+                                    class="{% if errores and errores.fecha %}border-red-500{% else %}border-slate-200{% endif %} w-full px-3 py-2 rounded-lg border focus:ring-2 focus:ring-indigo-100 outline-none text-sm text-slate-600">
+
+
+                                {% if errores and errores.fecha %}
+                                    <p class="text-red-500 text-xs mt-1 font-medium">{{ errores.fecha }}</p>
+                                {% endif %}
+                            </div>
+
+                        </div>
+
+                        <div class="bg-white p-4 rounded-lg shadow-sm border border-indigo-50">
+                            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3">
+                                <h3 class="flex items-center gap-1 text-xs font-bold text-slate-500 uppercase mb-2 ml-1">Tabla de Controles</h3>
+                                <button type="button" onclick="agregarNuevoControl()"
+                                        class="group flex items-center gap-1.5 bg-transparent text-slate-600 hover:text-slate-900 px-2.5 py-1.5 rounded text-xs font-medium hover:bg-slate-100 transition-all duration-200">
+                                    <svg class="w-3.5 h-3.5 text-slate-400 group-hover:text-slate-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                                    </svg>
+                                    Nuevo control
+                                </button>
+                            </div>
+
+                            <div class="overflow-x-auto border border-indigo-100 rounded-lg shadow-sm">
+                                <table class="min-w-full divide-y divide-x divide-indigo-100 bg-white table-fixed text-xs">
+                                    <thead class="bg-indigo-50/50">
+                                        <tr class="divide-x divide-indigo-100">
+                                            <th class="px-1.5 py-2 text-center font-bold text-gray-500 uppercase tracking-wider w-14">Código</th>
+                                            <th class="px-1.5 py-2 text-center font-bold text-gray-500 uppercase tracking-wider w-40">Periodo</th>
+                                            <th class="px-1.5 py-2 text-center font-bold text-gray-500 uppercase tracking-wider w-28">Premisa</th>
+                                            <th class="px-1.5 py-2 text-center font-bold text-gray-500 uppercase tracking-wider w-20">Inspección</th>
+                                            <th class="px-3 py-2 text-left font-bold text-gray-500 uppercase tracking-wider w-auto">Control</th>
+                                            <th class="px-1 py-2 text-center font-bold text-gray-500 uppercase tracking-wider w-12">Ejec.</th>
+                                            <th class="px-1 py-2 text-center font-bold text-gray-500 uppercase tracking-wider w-12">Opacar</th>
+                                            <th class="px-1 py-2 text-center font-bold text-gray-500 uppercase tracking-wider w-12">Ocult.</th>
+                                            <th class="px-1.5 py-2 text-center font-bold text-gray-500 uppercase tracking-wider w-20">Acción</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tabla-controles" class="divide-y divide-indigo-100">
+                                        {% for control in controles %}
+<tr id="control-{{ control.pk }}" class="hover:bg-indigo-50/30 transition-colors divide-x divide-indigo-50">
+    <input type="hidden" name="controles-{{ forloop.counter0 }}-id" value="{{ control.pk }}">
+
+    <td class="px-1 py-2 text-center">
+        <span class="inline-flex items-center justify-center min-w-[24px] h-6 px-1.5 rounded-md bg-indigo-100 text-indigo-700 font-bold text-[11px]"
+              title="Código de control (fijo, no editable)">
+            {{ control.codigo_control|default:"—" }}
+        </span>
+    </td>
+                                            <td class="p-0">
+                                                <input type="text" 
+                                                    name="controles-{{ forloop.counter0 }}-periodo"
+                                                    value="{{ control.periodo }}"
+                                                    class="w-full h-full px-3 py-2 bg-transparent border-none focus:ring-1 focus:ring-inset focus:ring-indigo-300 outline-none text-xs text-center"
+                                                    placeholder="Ej. 1 año">
+                                            </td>
+
+                                            <td class="p-0">
+                                                <select name="controles-{{ forloop.counter0 }}-premisa"
+                                                        onchange="actualizarColorPremisa(this)"
+                                                        class="select-premisa-dinamico w-full h-full px-2 py-2 bg-transparent border-none focus:ring-1 focus:ring-inset focus:ring-indigo-300 outline-none text-xs appearance-none text-center cursor-pointer font-bold transition-colors
+                                                        {% if control.premisa|lower == 'recomendable' %}text-green-800{% else %}text-red-800{% endif %}">
+                                                    
+                                                    <option value="recomendable" {% if control.premisa|lower == 'recomendable' %}selected{% endif %}>Recomendable</option>
+                                                    <option value="obligatorio" {% if control.premisa|lower == 'obligatorio' %}selected{% endif %}>Obligatorio</option>
+                                                </select>
+                                            </td>
+
+                                            <td class="px-1 py-1">
+                                                <div class="relative h-6 min-w-[80px]">
+                                                    <span id="display-control-{{ forloop.counter0 }}"
+                                                        class="absolute inset-0 flex items-center justify-center rounded font-bold text-white text-[10px] uppercase shadow-sm transition-all pointer-events-none"
+                                                        style="background-color: {% if control.id_inspeccion.color_inspeccion %}{{ control.id_inspeccion.color_inspeccion }}{% else %}#4f46e5{% endif %}; 
+                                                                display: {% if control.id_inspeccion.id %}flex{% else %}none{% endif %};">
+                                                        {{ control.id_inspeccion.codigo_inspeccion|default:'--' }}
+                                                    </span>
+
+                                                    <select name="controles-{{ forloop.counter0 }}-inspeccion"
+                                                            id="select-control-{{ forloop.counter0 }}"
+                                                            class="select-inspeccion-hibrido absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                                            data-display-id="display-control-{{ forloop.counter0 }}">
+                                                        <option value="">--</option>
+                                                        {% for inspeccion in inspecciones %}
+                                                            <option value="{{ inspeccion.id }}" 
+                                                                    data-color="{{ inspeccion.color_inspeccion|default:'#4f46e5' }}"
+                                                                    data-codigo="{{ inspeccion.codigo_inspeccion }}"
+                                                                    {% if control.id_inspeccion.id == inspeccion.id %}selected{% endif %}>
+                                                                {{ inspeccion.codigo_inspeccion }} - {{ inspeccion.nombre_inspeccion }}
+                                                            </option>
+                                                        {% endfor %}
+                                                    </select>
+
+                                                    <div class="indicador-vacio absolute inset-0 border border-dashed border-slate-300 rounded flex items-center justify-center bg-white/50 pointer-events-none"
+                                                        style="display: {% if not control.id_inspeccion.id %}flex{% else %}none{% endif %};">
+                                                        <span class="text-slate-400 text-[10px] font-medium">Elegir</span>
+                                                    </div>
+                                                </div>
+                                            </td>
+
+                                            <td class="p-0 align-top">
+                                                <textarea 
+                                                    name="controles-{{ forloop.counter0 }}-control"
+                                                    rows="7"
+                                                    class="w-full min-h-[40px] px-3 py-2 bg-transparent border-none focus:bg-indigo-50/50 focus:ring-1 focus:ring-inset focus:ring-indigo-300 outline-none text-xs resize-y block transition-colors"
+                                                    placeholder="Describa el control...">{{ control.control }}</textarea>
+                                            </td>
+
+                                            <td class="px-1 py-2 text-center">
+                                                <input type="checkbox" name="controles-{{ forloop.counter0 }}-ejecutado" class="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500" {% if control.ejecutado %}checked{% endif %}>
+                                            </td>
+                                            <td class="px-1 py-2 text-center">
+                                                <input type="checkbox" name="controles-{{ forloop.counter0 }}-opacar" class="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500" {% if control.opacar %}checked{% endif %}>
+                                            </td>
+                                            <td class="px-1 py-2 text-center">
+                                                <input type="checkbox" name="controles-{{ forloop.counter0 }}-ocultar" class="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500" {% if control.ocultar %}checked{% endif %}>
+                                            </td>
+                                            <td class="px-1.5 py-2 text-center">
+                                                <button type="button" onclick="eliminarFilaControl(this)" class="p-1.5 text-slate-400 hover:text-red-500 transition-colors">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                                                    </svg>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        {% empty %}
+                                        <tr id="fila-vacia">
+                                            <td colspan="9" class="px-4 py-6 text-center text-xs text-slate-400 italic">No hay controles registrados.</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 gap-4">
+                            <div class="bg-white p-4 rounded-lg shadow-sm border border-indigo-50">
+                                <label for="precauciones" class="flex items-center gap-1 text-xs font-bold text-slate-500 uppercase mb-2 ml-1">
+                                    <svg class="w-3 h-3 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                                    </svg>
+                                    Precauciones
+                                </label>
+                                <textarea id="precauciones" name="precaucion" rows="10" 
+                                    class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-100 outline-none text-sm" 
+                                    placeholder="Describa las medidas preventivas...">{% if errores %}{{ precaucion_value }}{% else %}{{ ficha.precaucion|default:'' }}{% endif %}</textarea>
+                                {% if errores.precaucion %}
+                                    <p class="text-red-500 text-xs mt-1 font-medium">{{ errores.precaucion }}</p>
+                                {% endif %}
+                            </div>
+
+                            <div class="bg-white p-4 rounded-lg shadow-sm border border-indigo-50">
+                                <label for="prescripciones" class="flex items-center gap-1 text-xs font-bold text-slate-500 uppercase mb-2 ml-1">
+                                    <svg class="w-3 h-3 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
+                                    </svg>
+                                    Prescripciones
+                                </label>
+                                <textarea id="prescripciones" name="prescripcion" rows="10" 
+                                    class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-100 outline-none text-sm" 
+                                    placeholder="Describa las acciones prescritas...">{% if errores %}{{ prescripcion_value }}{% else %}{{ ficha.prescripcion|default:'' }}{% endif %}</textarea>
+                                {% if errores.prescripcion %}
+                                    <p class="text-red-500 text-xs mt-1 font-medium">{{ errores.prescripcion }}</p>
+                                {% endif %}
+                            </div>
+
+                            <div class="bg-white p-4 rounded-lg shadow-sm border border-indigo-50">
+                                <label for="prohibiciones" class="flex items-center gap-1 text-xs font-bold text-slate-500 uppercase mb-2 ml-1">
+                                    <svg class="w-3 h-3 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path>
+                                    </svg>
+                                    Prohibiciones
+                                </label>
+                                <textarea id="prohibiciones" name="prohibicion" rows="10" 
+                                    class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-100 outline-none text-sm" 
+                                    placeholder="Describa las acciones prohibidas...">{% if errores %}{{ prohibicion_value }}{% else %}{{ ficha.prohibicion|default:'' }}{% endif %}</textarea>
+                                {% if errores.prohibicion %}
+                                    <p class="text-red-500 text-xs mt-1 font-medium">{{ errores.prohibicion }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="bg-white p-4 rounded-lg shadow-sm border border-indigo-50">
+                                <div class="flex justify-between items-center mb-3">
+                                    <label class="flex items-center gap-1.5 text-xs font-semibold text-slate-700 mb-2">
+                                        <svg class="w-3.5 h-3.5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                        </svg>
+                                        Logo
+                                    </label>
+                                    <button type="button" id="boton-quitar-logo" 
+                                        onclick="quitarLogo()" 
+                                        class="{% if not ficha.logo %}hidden{% endif %} text-xs font-bold text-red-500 hover:text-red-700 transition-colors">
+                                        ✕ Quitar imagen
+                                    </button>
+                                </div>
+                                <input type="hidden" id="eliminar-logo" name="eliminar_logo" value="false">
+                                <label class="relative flex flex-col items-center justify-center w-full h-36 border-2 border-indigo-100 border-dashed rounded-lg cursor-pointer bg-indigo-50/30 hover:bg-indigo-50 transition-all group overflow-hidden">
+                                    <img id="vista-previa-logo" 
+                                        src="{% if ficha.logo %}{{ ficha.logo.url }}{% endif %}" 
+                                        class="absolute inset-0 w-full h-full object-contain {% if not ficha.logo %}hidden{% endif %} z-10 bg-white" />
+                                    
+                                    <div id="mensaje-vacio-logo" class="flex flex-col items-center justify-center pt-4 pb-5 {% if ficha.logo %}opacity-0{% endif %}">
+                                        <div class="p-3 bg-white rounded-full shadow-sm mb-2 group-hover:scale-110 transition-transform">
+                                            <svg class="w-6 h-6 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                            </svg>
+                                        </div>
+                                        <p class="text-sm text-indigo-600 font-bold">Subir Logo</p>
+                                    </div>
+                                    <input type="file" id="archivo-logo" name="logo" class="hidden" accept="image/*" 
+                                        onchange="mostrarPrevisualizacion(this, 'vista-previa-logo', 'mensaje-vacio-logo', 'boton-quitar-logo')" />
+                                </label>
+                            </div>
+
+                            <div class="bg-white p-4 rounded-lg shadow-sm border border-indigo-50">
+                                <div class="flex justify-between items-center mb-3">
+                                    <label class="flex items-center gap-1.5 text-xs font-semibold text-slate-700 mb-2">
+                                        <svg class="w-3.5 h-3.5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                        </svg>
+                                        Imagen de Anexo
+                                    </label>
+                                    <button type="button" id="boton-quitar-anexo" 
+                                        onclick="quitarAnexo()" 
+                                        class="{% if not ficha.foto %}hidden{% endif %} text-xs font-bold text-red-500 hover:text-red-700 transition-colors">
+                                        ✕ Quitar imagen
+                                    </button>
+                                </div>
+                                <input type="hidden" id="eliminar-foto" name="eliminar_foto" value="false">
+                                <label class="relative flex flex-col items-center justify-center w-full h-36 border-2 border-indigo-100 border-dashed rounded-lg cursor-pointer bg-indigo-50/30 hover:bg-indigo-50 transition-all group overflow-hidden">
+                                    <img id="vista-previa-anexo" 
+                                        src="{% if ficha.foto %}{{ ficha.foto.url }}{% endif %}" 
+                                        class="absolute inset-0 w-full h-full object-contain {% if not ficha.foto %}hidden{% endif %} z-10 bg-white" />
+
+                                    <div id="mensaje-vacio-anexo" class="flex flex-col items-center justify-center pt-4 pb-5 {% if ficha.foto %}opacity-0{% endif %}">
+                                        <div class="p-3 bg-white rounded-full shadow-sm mb-2 group-hover:scale-110 transition-transform">
+                                            <svg class="w-6 h-6 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                            </svg>
+                                        </div>
+                                        <p class="text-sm text-indigo-600 font-bold">Subir Anexo</p>
+                                    </div>
+                                    <input type="file" id="archivo-anexo" name="foto" class="hidden" accept="image/*" 
+                                        onchange="mostrarPrevisualizacion(this, 'vista-previa-anexo', 'mensaje-vacio-anexo', 'boton-quitar-anexo')" />
+                                </label>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </section>
+        </main>
+    </div>
+    
+    {% include "base/modal_confirmar_eliminar.html" %}
+
+    <script>
+        let contadorControles = {{ controles.count|default:0 }};
+
+        function mostrarPrevisualizacion(elementoInput, idVistaPrevia, idMensajeVacio, idBotonQuitar) {
+            const archivoSeleccionado = elementoInput.files[0];
+            const imagenPrevisualizacion = document.getElementById(idVistaPrevia);
+            const contenedorMensaje = document.getElementById(idMensajeVacio);
+            const botonEliminar = document.getElementById(idBotonQuitar);
+
+            if (archivoSeleccionado) {
+                const lector = new FileReader();
+
+                lector.onload = function(evento) {
+                    imagenPrevisualizacion.src = evento.target.result;
+                    imagenPrevisualizacion.classList.remove('hidden');
+                    contenedorMensaje.classList.add('opacity-0');
+                    botonEliminar.classList.remove('hidden');
+                };
+
+                lector.readAsDataURL(archivoSeleccionado);
+            }
+        }
+
+        function quitarLogo() {
+            const inputArchivo = document.getElementById('archivo-logo');
+            const imagenPrevisualizacion = document.getElementById('vista-previa-logo');
+            const contenedorMensaje = document.getElementById('mensaje-vacio-logo');
+            const botonEliminar = document.getElementById('boton-quitar-logo');
+            const eliminarLogoInput = document.getElementById('eliminar-logo');
+
+            inputArchivo.value = ""; 
+            imagenPrevisualizacion.src = "";
+            imagenPrevisualizacion.classList.add('hidden');
+            contenedorMensaje.classList.remove('opacity-0');
+            botonEliminar.classList.add('hidden');
+            
+            eliminarLogoInput.value = "true";
+        }
+
+        function quitarAnexo() {
+            const inputArchivo = document.getElementById('archivo-anexo');
+            const imagenPrevisualizacion = document.getElementById('vista-previa-anexo');
+            const contenedorMensaje = document.getElementById('mensaje-vacio-anexo');
+            const botonEliminar = document.getElementById('boton-quitar-anexo');
+            const eliminarFotoInput = document.getElementById('eliminar-foto');
+
+            inputArchivo.value = ""; 
+            imagenPrevisualizacion.src = "";
+            imagenPrevisualizacion.classList.add('hidden');
+            contenedorMensaje.classList.remove('opacity-0');
+            botonEliminar.classList.add('hidden');
+            
+            eliminarFotoInput.value = "true";
+        }
+
+function agregarNuevoControl() {
+    const tablaControles = document.getElementById('tabla-controles');
+    const filaVacia = document.getElementById('fila-vacia');
+    
+    if (filaVacia) {
+        filaVacia.remove();
+    }
+    
+    const nuevoIndice = contadorControles;
+    contadorControles++;
+
+    const nuevaFila = document.createElement('tr');
+    nuevaFila.id = `control-nuevo-${nuevoIndice}`;
+    nuevaFila.className = 'hover:bg-indigo-50/30 transition-colors divide-x divide-indigo-50';
+    
+    nuevaFila.innerHTML = `
+        <input type="hidden" name="controles-${nuevoIndice}-id" value="">
+
+        <td class="px-1 py-2 text-center">
+            <span class="inline-flex items-center justify-center min-w-[24px] h-6 px-1.5 rounded-md bg-amber-100 text-amber-700 font-bold text-[9px] uppercase"
+                  title="El código se asignará automáticamente al guardar">
+                Nuevo
+            </span>
+        </td>
+
+        <td class="p-0">
+            <input type="text" 
+                name="controles-${nuevoIndice}-periodo"
+                class="w-full h-full px-3 py-2 bg-transparent border-none focus:ring-1 focus:ring-inset focus:ring-indigo-300 outline-none text-xs text-center"
+                placeholder="Ej. 1 año">
+        </td>
+
+        <td class="p-0">
+            <select name="controles-${nuevoIndice}-premisa"
+                    class="select-premisa-dinamico w-full h-full px-2 py-2 bg-transparent border-none focus:ring-1 focus:ring-inset focus:ring-indigo-300 outline-none text-xs appearance-none text-center cursor-pointer font-bold transition-colors text-green-800">
+                <option value="recomendable" selected>Recomendable</option>
+                <option value="obligatorio">Obligatorio</option>
+            </select>
+        </td>
+
+        <td class="px-1 py-1">
+            <div class="relative h-6 min-w-[80px]">
+                <span id="display-control-nuevo-${nuevoIndice}"
+                    class="absolute inset-0 flex items-center justify-center rounded font-bold text-white text-[10px] uppercase shadow-sm transition-all pointer-events-none"
+                    style="display: none; background-color: #4f46e5;">
+                    --
+                </span>
+                <select name="controles-${nuevoIndice}-inspeccion"
+                        id="select-control-nuevo-${nuevoIndice}"
+                        class="select-inspeccion-hibrido absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                        data-display-id="display-control-nuevo-${nuevoIndice}">
+                    <option value="">--</option>
+                    {% for inspeccion in inspecciones %}
+                    <option value="{{ inspeccion.id }}" 
+                            data-color="{{ inspeccion.color_inspeccion|default:'#4f46e5' }}"
+                            data-codigo="{{ inspeccion.codigo_inspeccion }}">
+                        {{ inspeccion.codigo_inspeccion }} - {{ inspeccion.nombre_inspeccion }}
+                    </option>
+                    {% endfor %}
+                </select>
+                <div class="indicador-vacio absolute inset-0 border border-dashed border-slate-300 rounded flex items-center justify-center bg-white/50 pointer-events-none">
+                    <span class="text-slate-400 text-[10px] font-medium">Elegir</span>
+                </div>
+            </div>
+        </td>
+
+        <td class="p-0 align-top">
+            <textarea 
+                name="controles-${nuevoIndice}-control"
+                rows="5"
+                class="w-full min-h-[40px] px-3 py-2 bg-transparent border-none focus:bg-indigo-50/50 focus:ring-1 focus:ring-inset focus:ring-indigo-300 outline-none text-xs resize-y block transition-colors"
+                placeholder="Describa el control..."></textarea>
+        </td>
+
+        <td class="px-1 py-2 text-center">
+            <input type="checkbox" name="controles-${nuevoIndice}-ejecutado" class="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500">
+        </td>
+        <td class="px-1 py-2 text-center">
+            <input type="checkbox" name="controles-${nuevoIndice}-opacar" class="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500">
+        </td>
+        <td class="px-1 py-2 text-center">
+            <input type="checkbox" name="controles-${nuevoIndice}-ocultar" class="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500">
+        </td>
+
+        <td class="px-1.5 py-2 text-center">
+            <button type="button" onclick="eliminarFilaControl(this)" class="p-1.5 text-slate-400 hover:text-red-500 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                </svg>
+            </button>
+        </td>
+    `;
+    
+    tablaControles.prepend(nuevaFila);
+    
+    const primerInput = nuevaFila.querySelector('input[type="text"]');
+    if (primerInput) primerInput.focus();
+}
+
+function eliminarFilaControl(boton) {
+    const fila = boton.closest('tr');
+    if (!fila) return;
+    
+    fila.remove();
+    
+    const tablaControles = document.getElementById('tabla-controles');
+    const filasExistentes = tablaControles.querySelectorAll('tr:not(#fila-vacia)');
+    
+    if (filasExistentes.length === 0) {
+        tablaControles.innerHTML = `
+            <tr id="fila-vacia">
+                <td colspan="9" class="px-4 py-6 text-center text-xs text-slate-400 italic">
+                    No hay controles registrados. Haga clic en "Nuevo control" para agregar uno.
+                </td>
+            </tr>
+        `;
+    }
+}
+
+        function alternarMenu() {
+            const menuLateral = document.getElementById('sidebar-principal');
+            const fondoOscuro = document.getElementById('fondo-oscuro');
+            
+            if (menuLateral.classList.contains('-translate-x-full')) {
+                menuLateral.classList.remove('-translate-x-full');
+                menuLateral.classList.add('translate-x-0');
+                fondoOscuro.classList.remove('hidden');
+            } else {
+                menuLateral.classList.remove('translate-x-0');
+                menuLateral.classList.add('-translate-x-full');
+                fondoOscuro.classList.add('hidden');
+            }
+        }
+
+
+
+        // Configuración de eventos al cargar el DOM
+        document.addEventListener('DOMContentLoaded', function() {
+            // Manejo del formulario principal (si existe)
+            const botonGuardar = document.querySelector('button[type="submit"][form="form-ficha-completo"]');
+            if (botonGuardar) {
+                botonGuardar.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    document.getElementById('form-ficha-completo').submit();
+                });
+            }
+
+            // Cerrar el modal si se presiona la tecla ESC
+            document.addEventListener('keydown', function(e) {
+                if (e.key === "Escape") {
+                    const modal = document.getElementById('modal-eliminar-ficha');
+                    if (!modal.classList.contains('hidden')) {
+                        cerrarModalFicha();
+                    }
+                }
+            });
+        });
+
+
+        const GestorControles = {
+            init() {
+                // Ejecutar validación inicial de colores
+                this.actualizarTodosLosColoresPremisa();
+
+                // Escuchar cambios en el documento (Delegación de eventos)
+                document.addEventListener('change', (e) => {
+                    const el = e.target;
+                    
+                    // Caso 1: Cambio en Select de Inspección (Híbrido)
+                    if (el.classList.contains('select-inspeccion-hibrido')) {
+                        this.actualizarVisualInspeccion(el);
+                    }
+                    
+                    // Caso 2: Cambio en Select de Premisa (Colores)
+                    if (el.classList.contains('select-premisa-dinamico')) {
+                        this.aplicarColorPremisa(el);
+                    }
+                });
+
+                // Manejo de efectos visuales (focus/blur)
+                document.addEventListener('focusin', (e) => {
+                    if (e.target.classList.contains('select-inspeccion-hibrido')) this.resaltar(e.target, true);
+                });
+                document.addEventListener('focusout', (e) => {
+                    if (e.target.classList.contains('select-inspeccion-hibrido')) this.resaltar(e.target, false);
+                });
+            },
+
+            // Lógica para Colores de Premisa
+            aplicarColorPremisa(select) {
+                // Limpiar clases previas
+                select.classList.remove('text-green-800', 'text-red-800');
+                
+                // Aplicar color según valor
+                if (select.value === 'recomendable') {
+                    select.classList.add('text-green-800');
+                } else {
+                    select.classList.add('text-red-800');
+                }
+            },
+
+            actualizarTodosLosColoresPremisa() {
+                document.querySelectorAll('.select-premisa-dinamico').forEach(sel => {
+                    this.aplicarColorPremisa(sel);
+                });
+            },
+
+            // Lógica para Inspección (Híbrido)
+            actualizarVisualInspeccion(select) {
+                const contenedor = select.closest('.relative');
+                const display = document.getElementById(select.dataset.displayId);
+                const indicador = contenedor.querySelector('.indicador-vacio');
+                const opcion = select.options[select.selectedIndex];
+
+                if (opcion && opcion.value !== "") {
+                    display.style.backgroundColor = opcion.dataset.color;
+                    display.textContent = opcion.dataset.codigo;
+                    display.style.display = 'flex';
+                    if (indicador) indicador.style.display = 'none';
+                } else {
+                    display.style.display = 'none';
+                    if (indicador) indicador.style.display = 'flex';
+                }
+            },
+
+            resaltar(select, activo) {
+                const display = document.getElementById(select.dataset.displayId);
+                if (display) display.style.transform = activo ? 'scale(1.05)' : 'scale(1)';
+            }
+        };
+
+        // Iniciar al cargar el DOM
+        document.addEventListener('DOMContentLoaded', () => GestorControles.init());
+
+    </script>
+</body>
+</html>

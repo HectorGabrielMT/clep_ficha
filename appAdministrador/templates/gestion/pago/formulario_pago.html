@@ -1,0 +1,571 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clep - Gestión de Pagos</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/estiloGlobal.css' %}">
+    <link rel="icon" type="image/png" href="{% static 'img/icono.png' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Poppins', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Eliminar estilos nativos de inputs numéricos */
+        input::-webkit-outer-spin-button, 
+        input::-webkit-inner-spin-button { 
+            -webkit-appearance: none; 
+            margin: 0; 
+        }
+        input[type=number] { 
+            -moz-appearance: textfield; 
+        }
+
+        /* Estilos para tabla de pagos */
+        .input-table {
+            width: 100%;
+            background: transparent;
+            border: none;
+            outline: none;
+            padding: 12px 8px;
+            text-align: right;
+            font-family: inherit;
+            font-size: 11px;
+            color: #334155;
+            transition: all 0.2s ease;
+        }
+
+        .input-table:focus {
+            background: rgba(243, 244, 246, 1);
+            color: #4f46e5;
+        }
+
+        .nota-header {
+            width: 100%;
+            background: transparent;
+            border: none;
+            font-size: 9px;
+            text-align: center;
+            color: #94a3b8;
+            outline: none;
+            margin-top: 2px;
+            padding: 0;
+            font-weight: normal;
+        }
+        
+        .nota-header:focus {
+            color: #6366f1;
+        }
+
+/* Contenedor del input */
+.input-euro-container {
+    position: relative;
+    display: flex;
+    items-center;
+    width: 100%;
+}
+
+/* El input debe tener espacio a la derecha para el símbolo */
+.input-monto {
+    padding-right: 20px !important; /* Espacio para el símbolo € */
+    text-align: right;
+    width: 100%;
+}
+
+/* El símbolo del euro */
+.input-euro-container::after {
+    content: "€";
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 10px;
+    color: #94a3b8; /* slate-400 */
+    pointer-events: none; /* Permite hacer clic a través del símbolo */
+}
+
+        select.input-table {
+            text-align-last: center;
+            cursor: pointer;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background: transparent;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar { 
+            height: 8px; 
+            width: 8px; 
+        }
+        .custom-scrollbar::-webkit-scrollbar-track { 
+            background: #f1f1f1; 
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb { 
+            background: #cbd5e1; 
+            border-radius: 4px; 
+        }
+    </style>
+</head>
+<body class="bg-slate-50 font-sans antialiased text-slate-900">
+    {% include 'base/mensajes.html' %}
+    
+    <div class="flex h-screen overflow-hidden">
+        
+        <!-- Sidebar / Menu Lateral -->
+        <aside id="sidebar-principal" class="fixed inset-y-0 left-0 w-64 bg-white shadow-xl flex flex-col z-50 border-r border-indigo-50 h-full flex-shrink-0 transition-transform duration-300 transform -translate-x-full lg:relative lg:translate-x-0">
+            <div class="p-4 border-b border-indigo-50 relative">
+                
+                <!-- Botón de regreso -->
+                <div class="absolute left-4 top-6">
+                    <a href="{% url 'gestion_ccpp' ccpp.id_ccpp %}" class="text-slate-400 hover:text-indigo-600 transition-colors flex items-center">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                        </svg>
+                    </a>
+                </div>
+
+                <!-- Botón cerrar móvil -->
+                <div class="absolute right-4 top-5 lg:hidden">
+                    <button onclick="alternarMenu()" class="p-2 text-slate-400 hover:text-red-500">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Logo y título -->
+                <div class="flex flex-col items-center">
+
+                    {% if user.is_superuser%}
+                    <a href="{% url 'panel_principal' %}" class="space-x-3">
+                    {% else %}
+                    <a href="" class="space-x-3">
+                    {% endif %}
+                        <div class="flex items-center gap-3">
+                            <div class="flex-shrink-0">
+                                <img src="{% static 'img/logo.png' %}" 
+                                    alt="Logo clep" 
+                                    class="w-32 h-16 object-contain drop-shadow-sm transition-transform duration-300 hover:scale-110">
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Información de la CCPP -->
+            <nav class="flex-1 px-3 py-4 overflow-y-auto scrollIndependiente">
+
+
+                <div class="bg-white rounded-xl border border-green-400 shadow-sm mb-4 overflow-hidden">
+                    <div class="bg-slate-50 border-b border-slate-100 px-4 py-2.5 flex items-center">
+                        <div class="w-1 h-4 bg-green-500 rounded-full mr-2"></div>
+                        <p class="text-[11px] font-bold text-slate-700 uppercase tracking-wider">Acciones</p>
+                    </div>
+
+                    <div class="p-1.5">
+                        <button type="button" onclick="enviarFormulario()" 
+                                class="w-full group flex items-center px-3 py-2.5 text-slate-600 hover:bg-slate-100 rounded-md transition-all duration-200">
+                            
+                            <div class="p-1.5 rounded-lg bg-slate-50 group-hover:bg-white group-hover:shadow-sm transition-all mr-3">
+                                <svg class="w-4 h-4 text-slate-500 group-hover:text-slate-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path>
+                                </svg>
+                            </div>
+                            
+                            <span class="text-[13px] font-medium group-hover:text-slate-900">Guardar Cambios</span>
+                        </button>
+                    </div>
+                </div>
+
+                <hr class="mx-3 border-indigo-50/60 my-4"> 
+            </nav>
+
+            <!-- Información del usuario -->
+            <div class="p-2 border-t border-indigo-50">
+                <div class="flex items-center p-1.5 space-x-2 bg-indigo-50/50 rounded">
+                    <div class="w-6 h-6 flex-shrink-0 rounded-full bg-indigo-600 flex items-center justify-center text-white font-bold text-[9px]">
+                        {% if user.first_name and user.last_name %}
+                            {{ user.first_name|slice:":1" }}{{ user.last_name|slice:":1" }}
+                        {% else %}
+                            {{ user.username|slice:":2"|upper }}
+                        {% endif %}
+                    </div>
+                    
+                    <div class="flex-1 min-w-0 leading-tight">
+                        <input 
+                            type="text" 
+                            value="{{ user.username }}" 
+                            readonly 
+                            class="input-invisible w-full bg-transparent border-none p-0 text-xs font-bold text-slate-900 focus:ring-0 cursor-default truncate"
+                            title="{{ user.username }}"
+                        >
+                        
+                        <input 
+                            type="email" 
+                            value="{{ user.email }}" 
+                            readonly 
+                            class="input-invisible w-full bg-transparent border-none p-0 text-[10px] text-indigo-500 focus:ring-0 cursor-default truncate block -mt-1"
+                            title="{{ user.email }}"
+                        >
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Contenido principal -->
+        <main class="flex-1 flex flex-col min-w-0 bg-slate-50">
+            <header class="h-16 bg-white border-b border-slate-100 flex items-center px-4 sm:px-6 justify-between flex-shrink-0">
+                <div class="flex items-center gap-4">
+                    <button type="button" onclick="alternarMenu()" 
+                            class="lg:hidden p-2 rounded-lg text-slate-500 hover:bg-slate-50 hover:text-indigo-600 transition-all border border-slate-100 shadow-sm">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 6h16M4 12h16M4 18h16"></path>
+                        </svg>
+                    </button>
+
+                    <div class="flex items-baseline gap-3">
+                        <h1 class="text-lg font-bold text-slate-800 tracking-tight leading-none">
+                            Gestión de Pagos
+                        </h1>
+
+                        <nav class="hidden md:flex items-center text-xs font-medium">
+                            <span class="mx-1.5 text-slate-300">|</span>
+                            <div class="flex items-center gap-1.5">
+                                {% if user.is_superuser %}
+                                    <a href="{% url 'panel_principal' %}" class="text-slate-400 hover:text-indigo-600 transition-colors">Inicio</a>
+                                    <svg class="w-3.5 h-3.5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                    </svg>
+                                 {% endif %}
+
+                                <a href="{% url 'gestion_ccpp' ccpp.id_ccpp %}" class="text-slate-400 hover:text-indigo-600 transition-colors">Cronograma</a>
+
+                                <svg class="w-3.5 h-3.5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                </svg>
+
+                                <span class="text-indigo-600 font-semibold">Pagos</span>
+                            </div>
+                        </nav>
+                    </div>
+                </div>
+            </header>
+
+            <section class="flex-1 overflow-hidden pt-1 px-2 pb-2 sm:px-4 sm:pb-4 flex flex-col">
+                <form id="formPagos" method="POST" enctype="multipart/form-data" class="max-w-full h-full flex flex-col space-y-3">
+                    {% csrf_token %}
+                    
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                        <div class="p-4 grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 items-end">
+                            
+                            <div class="flex flex-col gap-1.5">
+                                <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">F. Contrato</label>
+                                <input type="date" name="FechaContrato" value="{{ ccpp.FechaContrato|date:'Y-m-d' }}" 
+                                    class="w-full h-9 px-3 rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-100 focus:border-indigo-400 outline-none text-xs text-slate-700 transition-all">
+                            </div>
+
+                            <div class="flex flex-col gap-1.5">
+                                <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">F. Inicio Control</label>
+                                <input type="date" name="FechaInicioControl" value="{{ ccpp.FechaInicioControl|date:'Y-m-d' }}" 
+                                    class="w-full h-9 px-3 rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-100 focus:border-indigo-400 outline-none text-xs text-slate-700 transition-all">
+                            </div>
+
+                            <div class="flex flex-col gap-1.5">
+                                <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Cant. Viviendas</label>
+                                <input type="number" name="CantViviendas" value="{{ ccpp.CantViviendas }}" 
+                                    class="w-full h-9 px-3 rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-100 focus:border-indigo-400 outline-none text-xs text-slate-700 transition-all">
+                            </div>
+
+                            <div class="flex flex-col gap-1.5">
+                                <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Estado</label>
+                                <div class="relative">
+                                    <select name="estado" 
+                                        class="w-full h-9 px-3 rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-100 focus:border-indigo-400 outline-none text-xs text-slate-700 appearance-none transition-all">
+                                        <option value="activo" {% if ccpp.estado %}selected{% endif %}>ACTIVO</option>
+                                        <option value="inactivo" {% if not ccpp.estado %}selected{% endif %}>INACTIVO</option>
+                                    </select>
+                                    <i class="fa-solid fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 pointer-events-none"></i>
+                                </div>
+                            </div>
+
+                            <div class="col-span-1 md:col-span-2 flex flex-col gap-1.5">
+                                <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Ref. Contrato / Archivo</label>
+                                <div class="flex items-center h-9 bg-slate-50 border border-slate-200 rounded-lg px-3 transition-all focus-within:ring-2 focus-within:ring-indigo-100 focus-within:border-indigo-400 focus-within:bg-white">
+                                    <input type="text" name="NumeroContrato" value="{{ ccpp.NumeroContrato|default:'' }}" 
+                                        class="flex-1 bg-transparent text-xs outline-none text-slate-700 placeholder:text-slate-400" placeholder="Nº Referencia...">
+                                    
+                                    <div class="flex items-center gap-3 pl-2 border-l border-slate-200 h-5 ml-2">
+                                        {% if ccpp.ArchivoContrato %}
+                                        <a href="{{ ccpp.ArchivoContrato.url }}" target="_blank" title="Ver contrato actual"
+                                        class="text-indigo-600 hover:text-indigo-800 transition-transform hover:scale-110">
+                                            <i class="fa-solid fa-file-pdf text-sm"></i>
+                                        </a>
+                                        {% endif %}
+
+                                        <label class="cursor-pointer text-slate-400 hover:text-indigo-600 transition-colors" title="Subir nuevo contrato">
+                                            <i class="fa-solid fa-upload text-sm"></i>
+                                            <input type="file" name="ArchivoContrato_CCPP" id="id_archivo_ccpp" class="hidden" onchange="actualizarIconoSubida(this)">
+                                        </label>
+                                    </div>
+                                </div>
+                                <span id="nombre-archivo-ccpp" class="absolute translate-y-9 text-[9px] text-indigo-500 font-medium italic truncate max-w-[200px]"></span>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-xl shadow-sm border border-indigo-50 overflow-hidden flex flex-col flex-1">
+                        <div class="px-6 py-3 border-b border-slate-50 flex justify-between items-center bg-white">
+                            <h3 class="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Registros de Liquidación</h3>
+                            <button type="button" onclick="agregarFila()" class="text-indigo-600 hover:text-indigo-700 text-[10px] font-bold flex items-center gap-1 transition-all">
+                                <i class="fa-solid fa-plus-circle"></i> Incluir Pago
+                            </button>
+                        </div>
+
+                        <div class="overflow-x-auto custom-scrollbar flex-1">
+                            <table class="w-full border-collapse text-[11px] min-w-[1400px]">
+                                <thead>
+                                    <tr class="bg-slate-50/50 text-slate-500 border-b border-slate-100">
+                                        <th class="p-4 font-semibold w-24 text-center">Año</th>
+                                        <th class="p-4 font-semibold w-28 text-center">Mes</th>
+                                        <th class="px-2 py-3 font-semibold text-center border-l border-slate-50">Adaptacion. LE <input type="text" name="nota_adaptacionLE" placeholder="..." value="{{ ccpp.nota_adaptacionLE|default:'' }}" class="nota-header"></th>
+                                        <th class="px-2 py-3 font-semibold text-center border-l border-slate-50">Control y Verificación. <input type="text" name="nota_controlVerificacion" placeholder="..." value="{{ ccpp.nota_controlVerificacion|default:'' }}" class="nota-header"></th>
+                                        <th class="px-2 py-3 font-semibold text-center border-l border-slate-50">Emision Informe <input type="text" name="nota_emisionInforme" placeholder="..." value="{{ ccpp.nota_emisionInforme|default:'' }}" class="nota-header"></th>
+                                        <th class="px-2 py-3 font-semibold text-center border-l border-slate-50">Visita Tecnico <input type="text" name="nota_visitaTecnico" placeholder="..." value="{{ ccpp.nota_visitaTecnico|default:'' }}" class="nota-header"></th>
+                                        <th class="px-2 py-3 font-semibold text-center border-l border-slate-50">Asistencia Reunion <input type="text" name="nota_asistenciaReunion" placeholder="..." value="{{ ccpp.nota_asistenciaReunion|default:'' }}" class="nota-header"></th>
+                                        <th class="px-2 py-3 font-semibold text-center border-l border-slate-50">Ampliacion Libro Edificio. <input type="text" name="nota_ampliacionEdificio" placeholder="..." value="{{ ccpp.nota_ampliacionEdificio|default:'' }}" class="nota-header"></th>
+                                        <th class="px-2 py-3 font-semibold text-center border-l border-slate-50">Otros <input type="text" name="nota_otrosConceptos" placeholder="..." value="{{ ccpp.nota_otrosConceptos|default:'' }}" class="nota-header"></th>
+                                        <th class="p-4 font-semibold text-center w-32 border-l border-slate-50">Nº Factura</th>
+                                        <th class="p-4 font-semibold text-right w-36 border-l border-slate-50">Subtotal</th>
+                                        <th class="p-4 w-12 text-center"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbody-pagos" class="divide-y divide-slate-100">
+                                    {% for pago in pagos %}
+                                    <tr class="fila-pago group hover:bg-indigo-50/20 transition-colors">
+                                        <input type="hidden" name="pago_id[]" value="{{ pago.id_pago }}">
+                                        <td>
+                                            <select name="anio[]" class="input-table font-bold">
+                                                {% for a in rango_anios %}<option value="{{ a }}" {% if a == pago.anio %}selected{% endif %}>{{ a }}</option>{% endfor %}
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <select name="mes[]" class="input-table uppercase font-medium">
+                                                {% for m in meses_lista %}<option value="{{ m }}" {% if pago.mes == m %}selected{% endif %}>{{ m }}</option>{% endfor %}
+                                            </select>
+                                        </td>
+                                        <td class="p-0 border-l border-slate-50/50"><div class="input-euro-container"><input type="number" step="0.01" name="AdaptacionLE[]" value="{{ pago.AdaptacionLE|stringformat:'.2f' }}" class="input-table input-monto"></div></td>
+                                        <td class="p-0 border-l border-slate-50/50"><div class="input-euro-container"><input type="number" step="0.01" name="ControlVerificacion[]" value="{{ pago.ControlVerificacion|stringformat:'.2f' }}" class="input-table input-monto"></div></td>
+                                        <td class="p-0 border-l border-slate-50/50"><div class="input-euro-container"><input type="number" step="0.01" name="EmisionInforme[]" value="{{ pago.EmisionInforme|stringformat:'.2f' }}" class="input-table input-monto"></div></td>
+                                        <td class="p-0 border-l border-slate-50/50"><div class="input-euro-container"><input type="number" step="0.01" name="VisitaTecnico[]" value="{{ pago.VisitaTecnico|stringformat:'.2f' }}" class="input-table input-monto"></div></td>
+                                        <td class="p-0 border-l border-slate-50/50"><div class="input-euro-container"><input type="number" step="0.01" name="AsistenciaReunion[]" value="{{ pago.AsistenciaReunion|stringformat:'.2f' }}" class="input-table input-monto"></div></td>
+                                        <td class="p-0 border-l border-slate-50/50"><div class="input-euro-container"><input type="number" step="0.01" name="AmpliacionEdificio[]" value="{{ pago.AmpliacionEdificio|stringformat:'.2f' }}" class="input-table input-monto"></div></td>
+                                        <td class="p-0 border-l border-slate-50/50"><div class="input-euro-container"><input type="number" step="0.01" name="OtrosConceptos[]" value="{{ pago.OtrosConceptos|stringformat:'.2f' }}" class="input-table input-monto"></div></td>
+                                        <td class="p-0 border-l border-slate-50/50">
+                                            <div class="flex items-center h-full px-2">
+                                                <input type="text" name="RefFactura[]" value="{{ pago.RefFactura|default:'' }}" class="input-table text-center !text-[10px]" placeholder="...">
+                                                <div class="flex gap-1 ml-auto">
+                                                    {% if pago.ArchivoFactura %}
+                                                    <a href="{{ pago.ArchivoFactura.url }}" target="_blank" class="text-green-500 hover:text-green-700"><i class="fa-solid fa-file-invoice"></i></a>
+                                                    {% endif %}
+                                                    <label class="cursor-pointer text-slate-200 hover:text-indigo-600 transition-colors">
+                                                        <i class="fa-solid fa-upload text-[10px]"></i>
+                                                        <input type="file" name="archivo_pago_TEMP" class="hidden input-archivo" onchange="highlightUploadRow(this)">
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="p-4 text-right font-bold total-fila text-slate-400 border-l border-slate-50/50">0,00 €</td>
+                                        <td class="p-2 text-center">
+                                            <button type="button" onclick="confirmarEliminarFila(this)" class="opacity-0 group-hover:opacity-100 text-slate-300 hover:text-red-500 transition-all"><i class="fa-solid fa-xmark"></i></button>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="glass-footer bg-white rounded-xl shadow-sm border border-indigo-50 p-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Acumulado Total</p>
+                                <p id="totalGlobal" class="text-2xl font-black text-slate-900 tracking-tighter">0,00 €</p>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </section>
+        </main>
+    </div>
+
+    <!-- Fondo oscuro para móvil -->
+    <div id="fondo-oscuro" class="fixed inset-0 bg-black/50 z-40 hidden lg:hidden" onclick="alternarMenu()"></div>
+
+    <!-- Template para nueva fila -->
+    <template id="fila-template">
+        <tr class="fila-pago group bg-indigo-50/30">
+            <input type="hidden" name="pago_id[]" value="nuevo">
+            <td>
+                <select name="anio[]" class="input-table font-bold">
+                    {% for a in rango_anios %}<option value="{{ a }}" {% if forloop.last %}selected{% endif %}>{{ a }}</option>{% endfor %}
+                </select>
+            </td>
+            <td>
+                <select name="mes[]" class="input-table uppercase font-medium">
+                    {% for m in meses_lista %}<option value="{{ m }}">{{ m }}</option>{% endfor %}
+                </select>
+            </td>
+            <td class="p-0 border-l border-slate-50/50"><div class="input-euro-container"><input type="number" step="0.01" name="AdaptacionLE[]" class="input-table input-monto"></div></td>
+            <td class="p-0 border-l border-slate-50/50"><div class="input-euro-container"><input type="number" step="0.01" name="ControlVerificacion[]" class="input-table input-monto"></div></td>
+            <td class="p-0 border-l border-slate-50/50"><div class="input-euro-container"><input type="number" step="0.01" name="EmisionInforme[]" class="input-table input-monto"></div></td>
+            <td class="p-0 border-l border-slate-50/50"><div class="input-euro-container"><input type="number" step="0.01" name="VisitaTecnico[]" class="input-table input-monto"></div></td>
+            <td class="p-0 border-l border-slate-50/50"><div class="input-euro-container"><input type="number" step="0.01" name="AsistenciaReunion[]" class="input-table input-monto"></div></td>
+            <td class="p-0 border-l border-slate-50/50"><div class="input-euro-container"><input type="number" step="0.01" name="AmpliacionEdificio[]" class="input-table input-monto"></div></td>
+            <td class="p-0 border-l border-slate-50/50"><div class="input-euro-container"><input type="number" step="0.01" name="OtrosConceptos[]" class="input-table input-monto"></div></td>
+            <td class="p-0 border-l border-slate-50/50">
+                <div class="flex items-center h-full px-2">
+                    <input type="text" name="RefFactura[]" class="input-table text-center !text-[10px]" placeholder="...">
+                    <label class="cursor-pointer text-indigo-400 hover:text-indigo-600 ml-auto">
+                        <i class="fa-solid fa-cloud-arrow-up text-[10px]"></i>
+                        <input type="file" name="archivo_pago_TEMP" class="hidden input-archivo" onchange="highlightUploadRow(this)">
+                    </label>
+                </div>
+            </td>
+            <td class="p-4 text-right font-bold total-fila text-indigo-600 border-l border-slate-50/50">0,00 €</td>
+            <td class="p-2 text-center">
+                <button type="button" onclick="confirmarEliminarFila(this)" class="text-red-300 hover:text-red-500 transition-all"><i class="fa-solid fa-circle-xmark"></i></button>
+            </td>
+        </tr>
+    </template>
+
+    <!-- Modal de confirmación para eliminar -->
+    <div id="modalConfirmacion" class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-[2px] p-4">
+        <div class="bg-white rounded-3xl max-w-sm w-full shadow-2xl overflow-hidden transform transition-all">
+            <div class="p-8 text-center">
+                <div class="w-16 h-16 bg-red-50 text-red-500 rounded-2xl flex items-center justify-center mx-auto mb-4 rotate-3">
+                    <i class="fa-solid fa-trash-can text-2xl"></i>
+                </div>
+                <h3 class="text-lg font-bold text-slate-800 mb-2">¿Eliminar registro?</h3>
+                <p class="text-slate-500 text-sm">Esta acción es definitiva y borrará cualquier archivo asociado.</p>
+            </div>
+            <div class="grid grid-cols-2 border-t border-slate-50">
+                <button type="button" onclick="cerrarModal()" class="p-4 text-slate-400 font-bold hover:bg-slate-50 transition-colors">Atrás</button>
+                <button type="button" id="btnConfirmarEliminar" class="p-4 text-red-600 font-bold hover:bg-red-50 transition-colors">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Función para alternar menú en móvil
+        function alternarMenu() {
+            const menuLateral = document.getElementById('sidebar-principal');
+            const fondoOscuro = document.getElementById('fondo-oscuro');
+            
+            if (menuLateral.classList.contains('-translate-x-full')) {
+                menuLateral.classList.remove('-translate-x-full');
+                menuLateral.classList.add('translate-x-0');
+                fondoOscuro.classList.remove('hidden');
+            } else {
+                menuLateral.classList.remove('translate-x-0');
+                menuLateral.classList.add('-translate-x-full');
+                fondoOscuro.classList.add('hidden');
+            }
+        }
+
+        let filaAEliminar = null;
+
+        function highlightUploadCCPP(input) {
+            const label = input.parentElement;
+            if (input.files.length > 0) {
+                label.classList.add('text-green-600');
+                label.innerHTML = '<i class="fa-solid fa-check-double"></i>';
+            }
+        }
+
+        function highlightUploadRow(input) {
+            const icon = input.parentElement.querySelector('i');
+            if (input.files.length > 0) {
+                icon.className = 'fa-solid fa-circle-check text-green-500';
+            }
+        }
+
+        function reindexarArchivos() {
+            document.querySelectorAll('.fila-pago').forEach((fila, index) => {
+                const f = fila.querySelector('.input-archivo');
+                if (f) f.name = `archivo_pago_${index}`;
+            });
+        }
+
+        function calcularTotales() {
+            let acumuladoGlobal = 0;
+            document.querySelectorAll('.fila-pago').forEach(fila => {
+                let totalFila = 0;
+                fila.querySelectorAll('.input-monto').forEach(i => totalFila += parseFloat(i.value) || 0);
+                fila.querySelector('.total-fila').textContent = totalFila.toLocaleString('es-ES', {minimumFractionDigits:2}) + ' €';
+                
+                // Efecto visual si el total es mayor a 0
+                if(totalFila > 0) {
+                    fila.querySelector('.total-fila').classList.remove('text-slate-400');
+                    fila.querySelector('.total-fila').classList.add('text-indigo-600');
+                }
+                
+                acumuladoGlobal += totalFila;
+            });
+            document.getElementById('totalGlobal').textContent = acumuladoGlobal.toLocaleString('es-ES', {minimumFractionDigits:2}) + ' €';
+        }
+
+        function agregarFila() {
+            const tbody = document.getElementById('tbody-pagos');
+            const template = document.getElementById('fila-template').content.cloneNode(true);
+            tbody.prepend(template);
+            reindexarArchivos();
+            calcularTotales();
+        }
+
+        function confirmarEliminarFila(btn) {
+            filaAEliminar = btn.closest('tr');
+            document.getElementById('modalConfirmacion').classList.remove('hidden');
+        }
+
+        function cerrarModal() {
+            document.getElementById('modalConfirmacion').classList.add('hidden');
+            filaAEliminar = null;
+        }
+
+        document.getElementById('btnConfirmarEliminar').onclick = function() {
+            if (filaAEliminar) {
+                filaAEliminar.remove();
+                reindexarArchivos();
+                calcularTotales();
+                cerrarModal();
+            }
+        };
+
+        function enviarFormulario() {
+            reindexarArchivos(); 
+            document.getElementById('formPagos').submit();
+        }
+
+        document.addEventListener('input', e => { 
+            if(e.target.classList.contains('input-monto')) calcularTotales(); 
+        });
+        
+        window.onload = () => {
+            reindexarArchivos();
+            calcularTotales();
+        };
+    </script>
+</body>
+</html>

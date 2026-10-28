@@ -1,0 +1,89 @@
+{% if messages %}
+    <!-- Contenedor actualizado con clases responsivas (left-4, right-4, md:left-auto, etc.) -->
+    <div id="message-container" class="fixed z-[9999] pointer-events-none space-y-4 top-4 left-4 right-4 md:left-auto md:top-6 md:right-6 md:w-full md:max-w-sm">
+        {% for message in messages %}
+            {% with tag=message.tags|lower %}
+                <div class="message-item group relative overflow-hidden rounded-2xl bg-white/90 backdrop-blur-md border border-white/20 shadow-[0_8px_32px_0_rgba(31,38,135,0.2)] transition-all duration-500 ease-in-out hover:translate-y-[-2px] pointer-events-auto" role="alert">
+                    
+                    <div class="p-4 flex items-center">
+                        <div class="flex-shrink-0 flex items-center justify-center w-10 h-10 rounded-full 
+                            {% if tag == 'success' %} bg-green-100 text-green-600
+                            {% elif tag == 'warning' %} bg-yellow-100 text-yellow-600
+                            {% elif tag == 'error' or tag == 'danger' %} bg-red-100 text-red-600
+                            {% else %} bg-blue-100 text-blue-600
+                            {% endif %}">
+                            
+                            {% if tag == 'success' %}
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                            {% elif tag == 'warning' %}
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                            {% elif tag == 'error' or tag == 'danger' %}
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                            {% else %}
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            {% endif %}
+                        </div>
+
+                        <div class="ml-4 flex-1">
+                            <p class="text-sm font-bold text-gray-900 leading-tight">
+                                {% if tag == 'success' %} ¡Logrado!
+                                {% elif tag == 'error' or tag == 'danger' %} Error
+                                {% else %} Aviso
+                                {% endif %}
+                            </p>
+                            <p class="text-sm text-gray-600 mt-0.5">{{ message }}</p>
+                        </div>
+
+                        <button onclick="this.closest('.message-item').remove()" class="ml-4 text-gray-400 hover:text-gray-600 transition-colors">
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        </button>
+                    </div>
+
+                    <div class="h-1 w-full bg-gray-100/50">
+                        <div class="progress-bar h-full transition-all linear
+                            {% if tag == 'success' %} bg-green-500
+                            {% elif tag == 'warning' %} bg-yellow-500
+                            {% elif tag == 'error' or tag == 'danger' %} bg-red-500
+                            {% else %} bg-blue-500
+                            {% endif %}" 
+                            style="width: 100%">
+                        </div>
+                    </div>
+                </div>
+            {% endwith %}
+        {% endfor %}
+    </div>
+{% endif %}
+
+<script>
+    document.querySelectorAll('.message-item').forEach(item => {
+        const DURATION = 4000;
+        const progressBar = item.querySelector('.progress-bar');
+        
+        // Animación de la barra de progreso
+        setTimeout(() => {
+            if(progressBar) progressBar.style.width = '0%';
+            if(progressBar) progressBar.style.transition = `width ${DURATION}ms linear`;
+        }, 10);
+
+        // Desvanecimiento y eliminación
+        setTimeout(() => {
+            // El translate-x-full ahora funciona bien en ambas vistas desplazando el toast hacia la derecha
+            item.classList.add('opacity-0', 'translate-x-full');
+            item.style.transition = 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)';
+            
+            setTimeout(() => {
+                item.remove();
+            }, 600);
+        }, DURATION);
+    });
+
+// Se ejecuta tan pronto como la página ha terminado de cargar
+window.onload = function() {
+    history.pushState(null, "", location.href); 
+    
+    window.onpopstate = function(event) {
+        history.go(1);
+    };
+};
+</script>
